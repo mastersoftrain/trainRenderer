@@ -218,7 +218,7 @@ var lineJamAttributes = svgLines
         var startCoord = startNode.coord;
         var endCoord = nodeToNeighbor[1].coord;
 
-        var noiseAmount = startNode.jam;
+        var noiseAmount = 10;
         for (var i = noiseAmount; i >= 0; i--) {
             var newCoord = {};
             var theta = i / noiseAmount;
@@ -226,8 +226,8 @@ var lineJamAttributes = svgLines
             newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
 
             if (i != 0 && i != noiseAmount) {
-                newCoord.x += Random.range(-7, 7);
-                newCoord.y += Random.range(-7, 7);
+                newCoord.x += Random.range(-8, 8);
+                newCoord.y += Random.range(-8, 8);
             }
             lineData.push(newCoord);
         }
@@ -239,7 +239,7 @@ var lineJamAttributes = svgLines
     .attr("fill", "none")
     .style("stroke-opacity", 0.9)
     .transition()
-    .duration(1500)
+    .duration(Random.range(750, 3000))
     .attrTween("stroke-dashoffset", tweenDashOffset)
     .attrTween("stroke-dasharray", tweenDash)
     .ease(d3.easePolyIn)
@@ -283,7 +283,7 @@ function tweenDash() {
 
 function tweenDashOffset() {
     var l = this.getTotalLength(),
-        i = d3.interpolateString(0,l);
+        i = d3.interpolateString(0, l);
     return function (t) { return i(t); };
 }
 
@@ -296,7 +296,7 @@ function tweenDashReverse() {
 function animateLineJam(path) {
     d3.active(this)
         .transition()
-        .duration(1500)
+        .duration(Random.range(750, 3000))
         .attrTween("stroke-dasharray", tweenDash)
         .on("start", animateLineJam)
 }
