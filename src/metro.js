@@ -53,6 +53,7 @@ class Node {
             x: 0,
             y: 0
         }
+        this._id;
         this._metroLine;
         this._jam;
         this._neighbors = [];
@@ -64,6 +65,14 @@ class Node {
 
     set name(newName) {
         this._name = newName;
+    }
+
+    get id() {
+        return this._id;
+    }
+
+    set id(newId) {
+        this._id = newId;
     }
 
     get coord() {
@@ -184,96 +193,99 @@ for (var i = 0; i < nodes.length; i++) {
     }
 }
 
+function render() {
 
-var lineGenerator = d3
-    .line()
-    .x(function (d) { return d.x; })
-    .y(function (d) { return d.y; })
-    .curve(d3.curveBasis)
+    var lineGenerator = d3
+        .line()
+        .x(function (d) { return d.x; })
+        .y(function (d) { return d.y; })
+        .curve(d3.curveBasis)
 
-var svgContainer = d3
-    .select("body")
-    .append("svg")
-    .attr("width", 10000)
-    .attr("height", 10000)
+    var svgContainer = d3
+        .select("#metro")
+        .append("svg")
+        .attr("width", 1500)
+        .attr("height", 900)
 
-var svgLines = svgContainer
-    .selectAll("lines")
-    .data(nodeToNeighbors)
-    .enter()
+    var svgLines = svgContainer
+        .selectAll("lines")
+        .data(nodeToNeighbors)
+        .enter()
 
-var lineAttributes = svgLines
-    .append("path")
-    .attr("d", function (nodeToNeighbor) { return lineGenerator([nodeToNeighbor[0].coord, nodeToNeighbor[1].coord]); })
-    .attr("stroke-width", 4)
-    .attr("stroke", function (nodeToNeighbor) { return nodeToNeighbor[0].metroColor; })
-    .attr("fill", "none")
+    var lineAttributes = svgLines
+        .append("path")
+        .attr("d", function (nodeToNeighbor) { return lineGenerator([nodeToNeighbor[0].coord, nodeToNeighbor[1].coord]); })
+        .attr("stroke-width", 4)
+        .attr("stroke", function (nodeToNeighbor) { return nodeToNeighbor[0].metroColor; })
+        .attr("fill", "none")
 
 
-var lineJamAttributes = svgLines
-    .append("path")
-    .attr("d", function (nodeToNeighbor) {
-        var lineData = [];
-        var startNode = nodeToNeighbor[0];
-        var startCoord = startNode.coord;
-        var endCoord = nodeToNeighbor[1].coord;
+    var lineJamAttributes = svgLines
+        .append("path")
+        .attr("d", function (nodeToNeighbor) {
+            var lineData = [];
+            var startNode = nodeToNeighbor[0];
+            var startCoord = startNode.coord;
+            var endCoord = nodeToNeighbor[1].coord;
 
-        var noiseAmount = 10;
-        for (var i = noiseAmount; i >= 0; i--) {
-            var newCoord = {};
-            var theta = i / noiseAmount;
-            newCoord["x"] = theta * startCoord.x + (1 - theta) * endCoord.x;
-            newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
+            var noiseAmount = 10;
+            for (var i = noiseAmount; i >= 0; i--) {
+                var newCoord = {};
+                var theta = i / noiseAmount;
+                newCoord["x"] = theta * startCoord.x + (1 - theta) * endCoord.x;
+                newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
 
-            if (i != 0 && i != noiseAmount) {
-                newCoord.x += Random.range(-8, 8);
-                newCoord.y += Random.range(-8, 8);
+                if (i != 0 && i != noiseAmount) {
+                    newCoord.x += Random.range(-8, 8);
+                    newCoord.y += Random.range(-8, 8);
+                }
+                lineData.push(newCoord);
             }
-            lineData.push(newCoord);
-        }
 
-        return lineGenerator(lineData);
-    })
-    .attr("stroke-width", 1)
-    .attr("stroke", function (nodeToNeighbor) { return nodeToNeighbor[0].metroColor; })
-    .attr("fill", "none")
-    .style("stroke-opacity", 0.9)
-    .transition()
-    .duration(Random.range(750, 3000))
-    .attrTween("stroke-dashoffset", tweenDashOffset)
-    .attrTween("stroke-dasharray", tweenDash)
-    .ease(d3.easePolyIn)
-    .on("start", animateLineJam)
+            return lineGenerator(lineData);
+        })
+        .attr("stroke-width", 1)
+        .attr("stroke", function (nodeToNeighbor) { return nodeToNeighbor[0].metroColor; })
+        .attr("fill", "none")
+        .style("stroke-opacity", 0.9)
+        .transition()
+        .duration(Random.range(750, 3000))
+        .attrTween("stroke-dashoffset", tweenDashOffset)
+        .attrTween("stroke-dasharray", tweenDash)
+        .ease(d3.easePolyIn)
+        .on("start", animateLineJam)
 
-var svgNodes = svgContainer
-    .selectAll("nodes")
-    .data(nodes)
-    .enter()
+    var svgNodes = svgContainer
+        .selectAll("nodes")
+        .data(nodes)
+        .enter()
 
-var nodeAttributes = svgNodes
-    .append("circle")
-    .attr("cx", function (node) { return node.coord.x; })
-    .attr("cy", function (node) { return node.coord.y; })
-    .attr("r", 10)
-    .attr("fill", function (node) { return node.metroColor; })
+    var nodeAttributes = svgNodes
+        .append("circle")
+        .attr("cx", function (node) { return node.coord.x; })
+        .attr("cy", function (node) { return node.coord.y; })
+        .attr("r", 10)
+        .attr("fill", function (node) { return node.metroColor; })
 
-var nodeInsideCircleAttributes = svgNodes
-    .append("circle")
-    .attr("cx", function (node) { return node.coord.x; })
-    .attr("cy", function (node) { return node.coord.y; })
-    .attr("r", 6)
-    .attr("fill", "white")
+    var nodeInsideCircleAttributes = svgNodes
+        .append("circle")
+        .attr("cx", function (node) { return node.coord.x; })
+        .attr("cy", function (node) { return node.coord.y; })
+        .attr("r", 6)
+        .attr("fill", "white")
 
-var nodeNameAttributes = svgNodes
-    .append("text")
-    .text(function (node) { return node.name; })
-    .attr("x", function (node) { return node.coord.x; })
-    .attr("y", function (node) { return node.coord.y - 15; })
-    .attr("font-family", "Andale Mono")
-    .attr("font-size", "12px")
-    .attr("fill", function (node) { return node.metroColor; })
-    .attr("text-anchor", "middle")
+    var nodeNameAttributes = svgNodes
+        .append("text")
+        .text(function (node) { return node.name; })
+        .attr("x", function (node) { return node.coord.x; })
+        .attr("y", function (node) { return node.coord.y - 15; })
+        .attr("font-family", "Andale Mono")
+        .attr("font-size", "12px")
+        .attr("fill", function (node) { return node.metroColor; })
+        .attr("text-anchor", "middle")
 
+
+}
 
 function tweenDash() {
     var l = this.getTotalLength(),
