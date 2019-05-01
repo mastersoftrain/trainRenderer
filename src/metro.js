@@ -47,14 +47,14 @@ class Index {
 }
 
 class Node {
-    constructor(name) {
+    constructor(name, id = undefined, metroLine = undefined) {
         this._name = name;
         this._coord = {
             x: 0,
             y: 0
         }
-        this._id;
-        this._metroLine;
+        this._id = id;
+        this._metroLine = metroLine;
         this._jam;
         this._neighbors = [];
     }
