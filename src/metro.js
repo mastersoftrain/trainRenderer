@@ -110,106 +110,38 @@ class Node {
     }
 }
 
-var nodes = [];
-var width = 10;
-var height = 9;
+function render(nodes) {
 
-for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-        var index = Index.convert2Dto1D(x, y, width);
-        var node = new Node();
-        node.name = (y + 1) + "호선" + " - " + index;
-        node.metroLine = MetroLines[(y + 1) + "호선"];
-        node.coord = [(x + 1) * 100, (y + 1) * 100];
-        node.jam = Random.range(1, 10);
-        nodes.push(node);
-    }
-}
-
-for (var i = 0; i < nodes.length; i++) {
-    var coord = Index.convert1DTo2D(i, width);
-    var x = coord[0];
-    var y = coord[1];
-
-    var neighbors = [];
-
-    var neighborIndex = Index.convert2Dto1D(x + 1, y, width);
-    if (Index.isInBound(x + 1, y, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x + 1, y - 1, width);
-    if (Index.isInBound(x + 1, y - 1, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x + 1, y + 1, width);
-    if (Index.isInBound(x + 1, y + 1, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x - 1, y, width);
-    if (Index.isInBound(x - 1, y, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x - 1, y - 1, width);
-    if (Index.isInBound(x - 1, y - 1, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x - 1, y + 1, width);
-    if (Index.isInBound(x - 1, y + 1, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x, y - 1, width);
-    if (Index.isInBound(x, y - 1, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    neighborIndex = Index.convert2Dto1D(x, y + 1, width);
-    if (Index.isInBound(x, y + 1, height, width)) {
-        neighbors.push(nodes[neighborIndex]);
-    }
-
-    var randomNeighborNode = neighbors[Random.range(0, neighbors.length - 1)];
-    nodes[i].addNeighbor(randomNeighborNode);
-}
-
-var nodeToNeighbors = [];
-
-for (var i = 0; i < nodes.length; i++) {
-    for (var j = 0; j < nodes[i].neighbors.length; j++) {
-
-        if (nodeToNeighbors.find(pair => pair[1] === nodes[i]))
-            continue;
-        for (var k = 0; k < nodes[i].neighbors[j].jam; k++) {
-            nodeToNeighbors.push([nodes[i], nodes[i].neighbors[j]]);
+    let neighborsOfNodes = [];
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = 0; j < nodes[i].neighbors.length; j++) {
+    
+            if (neighborsOfNodes.find(pair => pair[1] === nodes[i]))
+                continue;
+            for (let k = 0; k < nodes[i].neighbors[j].jam; k++) {
+                neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j]]);
+            }
         }
     }
-}
 
-function render() {
-
-    var lineGenerator = d3
+    let lineGenerator = d3
         .line()
         .x(function (d) { return d.x; })
         .y(function (d) { return d.y; })
         .curve(d3.curveBasis)
 
-    var svgContainer = d3
+    let svgContainer = d3
         .select("#metro")
         .append("svg")
         .attr("width", 1500)
         .attr("height", 900)
 
-    var svgLines = svgContainer
+    let svgLines = svgContainer
         .selectAll("lines")
-        .data(nodeToNeighbors)
+        .data(neighborsOfNodes)
         .enter()
 
-    var lineAttributes = svgLines
+    let lineAttributes = svgLines
         .append("path")
         .attr("d", function (nodeToNeighbor) { return lineGenerator([nodeToNeighbor[0].coord, nodeToNeighbor[1].coord]); })
         .attr("stroke-width", 4)
@@ -217,18 +149,18 @@ function render() {
         .attr("fill", "none")
 
 
-    var lineJamAttributes = svgLines
+    let lineJamAttributes = svgLines
         .append("path")
         .attr("d", function (nodeToNeighbor) {
-            var lineData = [];
-            var startNode = nodeToNeighbor[0];
-            var startCoord = startNode.coord;
-            var endCoord = nodeToNeighbor[1].coord;
+            let lineData = [];
+            let startNode = nodeToNeighbor[0];
+            let startCoord = startNode.coord;
+            let endCoord = nodeToNeighbor[1].coord;
 
-            var noiseAmount = 10;
-            for (var i = noiseAmount; i >= 0; i--) {
-                var newCoord = {};
-                var theta = i / noiseAmount;
+            let noiseAmount = 10;
+            for (let i = noiseAmount; i >= 0; i--) {
+                let newCoord = {};
+                let theta = i / noiseAmount;
                 newCoord["x"] = theta * startCoord.x + (1 - theta) * endCoord.x;
                 newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
 
@@ -252,26 +184,26 @@ function render() {
         .ease(d3.easePolyIn)
         .on("start", animateLineJam)
 
-    var svgNodes = svgContainer
+    let svgNodes = svgContainer
         .selectAll("nodes")
         .data(nodes)
         .enter()
 
-    var nodeAttributes = svgNodes
+    let nodeAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) { return node.coord.x; })
         .attr("cy", function (node) { return node.coord.y; })
         .attr("r", 10)
         .attr("fill", function (node) { return node.metroColor; })
 
-    var nodeInsideCircleAttributes = svgNodes
+    let nodeInsideCircleAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) { return node.coord.x; })
         .attr("cy", function (node) { return node.coord.y; })
         .attr("r", 6)
         .attr("fill", "white")
 
-    var nodeNameAttributes = svgNodes
+    let nodeNameAttributes = svgNodes
         .append("text")
         .text(function (node) { return node.name; })
         .attr("x", function (node) { return node.coord.x; })
@@ -280,24 +212,22 @@ function render() {
         .attr("font-size", "12px")
         .attr("fill", function (node) { return node.metroColor; })
         .attr("text-anchor", "middle")
-
-
 }
 
 function tweenDash() {
-    var l = this.getTotalLength(),
+    let l = this.getTotalLength(),
         i = d3.interpolateString("0," + l, l + "," + l);
     return function (t) { return i(t); };
 }
 
 function tweenDashOffset() {
-    var l = this.getTotalLength(),
+    let l = this.getTotalLength(),
         i = d3.interpolateString(0, l);
     return function (t) { return i(t); };
 }
 
 function tweenDashReverse() {
-    var l = this.getTotalLength(),
+    let l = this.getTotalLength(),
         i = d3.interpolateString(l + "," + l, "0," + l);
     return function (t) { return i(t); };
 }
