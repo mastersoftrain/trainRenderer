@@ -1,25 +1,13 @@
-const MetroLines = Object.freeze({
-    "1호선": Symbol("1호선"),
-    "2호선": Symbol("2호선"),
-    "3호선": Symbol("3호선"),
-    "4호선": Symbol("4호선"),
-    "5호선": Symbol("5호선"),
-    "6호선": Symbol("6호선"),
-    "7호선": Symbol("7호선"),
-    "8호선": Symbol("8호선"),
-    "9호선": Symbol("9호선")
-});
-
 const MetroColors = Object.freeze({
-    [MetroLines["1호선"]]: "#0D3692",
-    [MetroLines["2호선"]]: "#33A23D",
-    [MetroLines["3호선"]]: "#FE5B10",
-    [MetroLines["4호선"]]: "#32A1C8",
-    [MetroLines["5호선"]]: "#8B50A4",
-    [MetroLines["6호선"]]: "#C55C1D",
-    [MetroLines["7호선"]]: "#54640D",
-    [MetroLines["8호선"]]: "#F51361",
-    [MetroLines["9호선"]]: "#AA9872"
+    "1호선": "#0D3692",
+    "2호선": "#33A23D",
+    "3호선": "#FE5B10",
+    "4호선": "#32A1C8",
+    "5호선": "#8B50A4",
+    "6호선": "#C55C1D",
+    "7호선": "#54640D",
+    "8호선": "#F51361",
+    "9호선": "#AA9872"
 });
 
 class Random {
