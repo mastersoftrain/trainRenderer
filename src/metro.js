@@ -35,7 +35,7 @@ class Index {
 }
 
 class Node {
-    constructor(name, id = undefined, metroLine = undefined, coord = {x: 0, y: 0}) {
+    constructor(name, id = undefined, metroLine = undefined, coord = { x: 0, y: 0 }) {
         this._name = name;
         this._coord = coord;
         this._id = id;
@@ -103,7 +103,7 @@ function render(nodes) {
     let neighborsOfNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         for (let j = 0; j < nodes[i].neighbors.length; j++) {
-    
+
             if (neighborsOfNodes.find(pair => pair[1] === nodes[i]))
                 continue;
             for (let k = 0; k < nodes[i].neighbors[j].jam; k++) {
@@ -121,8 +121,12 @@ function render(nodes) {
     let svgContainer = d3
         .select("#metro")
         .append("svg")
-        .attr("width", 1500)
-        .attr("height", 900)
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .call(d3.zoom().on("zoom", function () {
+            svgContainer.attr("transform", d3.event.transform)
+        }))
+        .append("g")
 
     let svgLines = svgContainer
         .selectAll("lines")
