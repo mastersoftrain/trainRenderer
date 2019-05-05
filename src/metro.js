@@ -106,9 +106,7 @@ function render(nodes) {
 
             if (neighborsOfNodes.find(pair => pair[1] === nodes[i]))
                 continue;
-            for (let k = 0; k < nodes[i].neighbors[j].jam; k++) {
-                neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j]]);
-            }
+            neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j]]);
         }
     }
 
@@ -135,19 +133,19 @@ function render(nodes) {
 
     let lineAttributes = svgLines
         .append("path")
-        .attr("d", function (nodeToNeighbor) { return lineGenerator([nodeToNeighbor[0].coord, nodeToNeighbor[1].coord]); })
+        .attr("d", function (neighborsOfNode) { return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[1].coord]); })
         .attr("stroke-width", 4)
-        .attr("stroke", function (nodeToNeighbor) { return nodeToNeighbor[0].metroColor; })
+        .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
         .attr("fill", "none")
 
 
     let lineJamAttributes = svgLines
         .append("path")
-        .attr("d", function (nodeToNeighbor) {
+        .attr("d", function (neighborsOfNode) {
             let lineData = [];
-            let startNode = nodeToNeighbor[0];
+            let startNode = neighborsOfNode[0];
             let startCoord = startNode.coord;
-            let endCoord = nodeToNeighbor[1].coord;
+            let endCoord = neighborsOfNode[1].coord;
 
             let noiseAmount = 10;
             for (let i = noiseAmount; i >= 0; i--) {
@@ -166,7 +164,7 @@ function render(nodes) {
             return lineGenerator(lineData);
         })
         .attr("stroke-width", 1)
-        .attr("stroke", function (nodeToNeighbor) { return nodeToNeighbor[0].metroColor; })
+        .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
         .attr("fill", "none")
         .style("stroke-opacity", 0.9)
         .transition()
