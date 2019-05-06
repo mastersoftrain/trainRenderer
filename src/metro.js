@@ -35,7 +35,10 @@ class Index {
 }
 
 class Node {
-    constructor(name, id = undefined, metroLine = undefined, coord = { x: 0, y: 0 }) {
+    constructor(name, id = undefined, metroLine = undefined, coord = {
+        x: 0,
+        y: 0
+    }) {
         this._name = name;
         this._coord = coord;
         this._id = id;
@@ -112,9 +115,13 @@ function render(nodes) {
 
     let lineGenerator = d3
         .line()
-        .x(function (d) { return d.x; })
-        .y(function (d) { return d.y; })
-        .curve(d3.curveBasis)
+        .x(function (d) {
+            return d.x;
+        })
+        .y(function (d) {
+            return d.y;
+        })
+        .curve(d3.curveCardinal)
 
     let svgContainer = d3
         .select("#metro")
@@ -133,9 +140,13 @@ function render(nodes) {
 
     let lineAttributes = svgLines
         .append("path")
-        .attr("d", function (neighborsOfNode) { return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[1].coord]); })
-        .attr("stroke-width", 4)
-        .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
+        .attr("d", function (neighborsOfNode) {
+            return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[1].coord]);
+        })
+        .attr("stroke-width", 3)
+        .attr("stroke", function (neighborsOfNode) {
+            return neighborsOfNode[0].metroColor;
+        })
         .attr("fill", "none")
 
 
@@ -155,16 +166,18 @@ function render(nodes) {
                 newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
 
                 if (i != 0 && i != noiseAmount) {
-                    newCoord.x += Random.range(-8, 8);
-                    newCoord.y += Random.range(-8, 8);
+                    newCoord.x += Random.range(-3, 3);
+                    newCoord.y += Random.range(-3, 3);
                 }
                 lineData.push(newCoord);
             }
 
             return lineGenerator(lineData);
         })
-        .attr("stroke-width", 1)
-        .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
+        .attr("stroke-width", 0.6)
+        .attr("stroke", function (neighborsOfNode) {
+            return neighborsOfNode[0].metroColor;
+        })
         .attr("fill", "none")
         .style("stroke-opacity", 0.9)
         .transition()
@@ -181,45 +194,69 @@ function render(nodes) {
 
     let nodeAttributes = svgNodes
         .append("circle")
-        .attr("cx", function (node) { return node.coord.x; })
-        .attr("cy", function (node) { return node.coord.y; })
-        .attr("r", 10)
-        .attr("fill", function (node) { return node.metroColor; })
+        .attr("cx", function (node) {
+            return node.coord.x;
+        })
+        .attr("cy", function (node) {
+            return node.coord.y;
+        })
+        .attr("r", 2)
+        .attr("fill", function (node) {
+            return node.metroColor;
+        })
 
     let nodeInsideCircleAttributes = svgNodes
         .append("circle")
-        .attr("cx", function (node) { return node.coord.x; })
-        .attr("cy", function (node) { return node.coord.y; })
-        .attr("r", 6)
+        .attr("cx", function (node) {
+            return node.coord.x;
+        })
+        .attr("cy", function (node) {
+            return node.coord.y;
+        })
+        .attr("r", 1.3)
         .attr("fill", "white")
 
     let nodeNameAttributes = svgNodes
         .append("text")
-        .text(function (node) { return node.name; })
-        .attr("x", function (node) { return node.coord.x; })
-        .attr("y", function (node) { return node.coord.y - 15; })
+        .text(function (node) {
+            return node.name;
+        })
+        .attr("x", function (node) {
+            return node.coord.x;
+        })
+        .attr("y", function (node) {
+            return node.coord.y - 15;
+        })
         .attr("font-family", "Andale Mono")
-        .attr("font-size", "12px")
-        .attr("fill", function (node) { return node.metroColor; })
+        .attr("font-size", "9px")
+        .attr("fill", function (node) {
+            return node.metroColor;
+        })
         .attr("text-anchor", "middle")
 }
 
 function tweenDash() {
     let l = this.getTotalLength(),
         i = d3.interpolateString("0," + l, l + "," + l);
-    return function (t) { return i(t); };
+    return function (t) {
+        return i(t);
+    };
 }
 
 function tweenDashOffset() {
     let l = this.getTotalLength(),
         i = d3.interpolateString(0, l);
-    return function (t) { return i(t); };
+    return function (t) {
+        return i(t);
+    };
 }
 
 function tweenDashReverse() {
     let l = this.getTotalLength(),
         i = d3.interpolateString(l + "," + l, "0," + l);
-    return function (t) { return i(t); };
+    return function (t) {
+        return i(t);
+    };
 }
 
 function animateLineJam(path) {
