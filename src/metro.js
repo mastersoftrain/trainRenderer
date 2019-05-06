@@ -101,8 +101,10 @@ class Node {
     }
 }
 
-function render(nodes) {
+var transform = null;
 
+function render(nodes) {
+    var isEditMode = false;
     let neighborsOfNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         for (let j = 0; j < nodes[i].neighbors.length; j++) {
@@ -111,6 +113,30 @@ function render(nodes) {
                 continue;
             neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j]]);
         }
+    }
+
+    let gridData = [];
+    for (let x = 0; x < 1500; x += 15) {
+        gridData.push([{
+                x: x,
+                y: 0
+            },
+            {
+                x: x,
+                y: 1000
+            }
+        ]);
+    }
+    for (let y = 0; y < 1000; y += 15) {
+        gridData.push([{
+                x: 0,
+                y: y
+            },
+            {
+                x: 1500,
+                y: y
+            }
+        ]);
     }
 
     let lineGenerator = d3
@@ -130,8 +156,77 @@ function render(nodes) {
         .attr("height", "100%")
         .call(d3.zoom().on("zoom", function () {
             svgContainer.attr("transform", d3.event.transform)
+            transform = d3.event.transform;
         }))
         .append("g")
+        .on("contextmenu", function (d) {
+            d3.event.preventDefault();
+        })
+
+    if (transform) {
+        svgContainer.attr("transform", transform)
+    }
+
+    let svgCoordSelector = svgContainer
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 1500)
+        .attr("height", 1000)
+        .attr("fill-opacity", "0")
+        .on("contextmenu", function (d) {
+            if (isEditMode) {
+                let mouseCoord = d3.mouse(this);
+                let gridCoord = {
+                    x: Math.floor(mouseCoord[0] / 15) * 15,
+                    y: Math.floor(mouseCoord[1] / 15) * 15
+                }
+
+                let param_xy = {};
+                let currentConfig = selected[selected.length - 1];
+
+                if (selected[selected.length - 1]) {
+                    param_xy.id = currentConfig.id;
+                    param_xy.coord_x = gridCoord.x;
+                    param_xy.coord_y = gridCoord.y;
+                    axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
+                        .then(function (response) {
+                            if (response.status === 200) {
+                                currentConfig.coord.x = gridCoord.x;
+                                currentConfig.coord.y = gridCoord.y;
+                                displayConfig(currentConfig);
+                                let msvg = document.querySelector("#metro > svg");
+                                if (msvg) {
+                                    msvg.remove();
+                                }
+                                selected = []
+                                render(selectedAll)
+                                console.log(response);
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                }
+            } else {
+                isEditMode = false;
+                displayConfig(null);
+            }
+        })
+
+    let svgGrids = svgContainer
+        .selectAll("grids")
+        .data(gridData)
+        .enter()
+
+    let gridAttributes = svgGrids
+        .append("path")
+        .attr("d", function (grid) {
+            return lineGenerator([grid[0], grid[1]]);
+        })
+        .attr("stroke-width", 1)
+        .attr("stroke", "black")
+        .style("stroke-opacity", 0.1)
 
     let svgLines = svgContainer
         .selectAll("lines")
@@ -215,6 +310,19 @@ function render(nodes) {
         })
         .attr("r", 1.3)
         .attr("fill", "white")
+        .on("click", function (d, i) {
+            if (isEditMode) {
+                isEditMode = false;
+                selected = []
+                displayConfig(null);
+            } else {
+                selected = []
+                selected.push(nodes[i])
+                let lastSelected = selected[selected.length - 1];
+                displayConfig(lastSelected);
+                isEditMode = true;
+            }
+        })
 
     let nodeNameAttributes = svgNodes
         .append("text")
@@ -234,6 +342,7 @@ function render(nodes) {
         })
         .attr("text-anchor", "middle")
 }
+
 
 function tweenDash() {
     let l = this.getTotalLength(),
