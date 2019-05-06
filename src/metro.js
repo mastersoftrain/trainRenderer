@@ -107,7 +107,7 @@ function render(nodes) {
     for (let i = 0; i < nodes.length; i++) {
         for (let j = 0; j < nodes[i].neighbors.length; j++) {
 
-            if (neighborsOfNodes.find(pair => pair[1] === nodes[i]))
+            if (neighborsOfNodes.find(pair => pair[0] === nodes[i].neighbors[j] && pair[1] === nodes[i]))
                 continue;
             neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j]]);
         }
@@ -121,7 +121,7 @@ function render(nodes) {
         .y(function (d) {
             return d.y;
         })
-        .curve(d3.curveCardinal)
+        .curve(d3.curveBasis)
 
     let svgContainer = d3
         .select("#metro")
@@ -166,8 +166,8 @@ function render(nodes) {
                 newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
 
                 if (i != 0 && i != noiseAmount) {
-                    newCoord.x += Random.range(-3, 3);
-                    newCoord.y += Random.range(-3, 3);
+                    newCoord.x += Random.range(-4, 4);
+                    newCoord.y += Random.range(-4, 4);
                 }
                 lineData.push(newCoord);
             }
