@@ -118,24 +118,24 @@ function render(nodes) {
     let gridData = [];
     for (let x = 0; x < 1500; x += 15) {
         gridData.push([{
-                x: x,
-                y: 0
-            },
-            {
-                x: x,
-                y: 1000
-            }
+            x: x,
+            y: 0
+        },
+        {
+            x: x,
+            y: 1000
+        }
         ]);
     }
     for (let y = 0; y < 1000; y += 15) {
         gridData.push([{
-                x: 0,
-                y: y
-            },
-            {
-                x: 1500,
-                y: y
-            }
+            x: 0,
+            y: y
+        },
+        {
+            x: 1500,
+            y: y
+        }
         ]);
     }
 
@@ -166,53 +166,6 @@ function render(nodes) {
     if (transform) {
         svgContainer.attr("transform", transform)
     }
-
-    let svgCoordSelector = svgContainer
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", 1500)
-        .attr("height", 1000)
-        .attr("fill-opacity", "0")
-        .on("contextmenu", function (d) {
-            if (isEditMode) {
-                let mouseCoord = d3.mouse(this);
-                let gridCoord = {
-                    x: Math.floor(mouseCoord[0] / 15) * 15,
-                    y: Math.floor(mouseCoord[1] / 15) * 15
-                }
-
-                let param_xy = {};
-                let currentConfig = selected[selected.length - 1];
-
-                if (selected[selected.length - 1]) {
-                    param_xy.id = currentConfig.id;
-                    param_xy.coord_x = gridCoord.x;
-                    param_xy.coord_y = gridCoord.y;
-                    axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
-                        .then(function (response) {
-                            if (response.status === 200) {
-                                currentConfig.coord.x = gridCoord.x;
-                                currentConfig.coord.y = gridCoord.y;
-                                displayConfig(currentConfig);
-                                let msvg = document.querySelector("#metro > svg");
-                                if (msvg) {
-                                    msvg.remove();
-                                }
-                                selected = []
-                                render(selectedAll)
-                                console.log(response);
-                            }
-                        })
-                        .catch(function (error) {
-                            console.log(error);
-                        });
-                }
-            } else {
-                isEditMode = false;
-                displayConfig(null);
-            }
-        })
 
     let svgGrids = svgContainer
         .selectAll("grids")
@@ -300,6 +253,71 @@ function render(nodes) {
             return node.metroColor;
         })
 
+    let nodeNameAttributes = svgNodes
+        .append("text")
+        .text(function (node) {
+            return node.name;
+        })
+        .attr("x", function (node) {
+            return node.coord.x;
+        })
+        .attr("y", function (node) {
+            return node.coord.y - 15;
+        })
+        .attr("font-family", "Andale Mono")
+        .attr("font-size", "9px")
+        .attr("fill", function (node) {
+            return node.metroColor;
+        })
+        .attr("text-anchor", "middle")
+
+    let svgCoordSelector = svgContainer
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 1500)
+        .attr("height", 1000)
+        .attr("fill-opacity", "0")
+        .on("contextmenu", function (d) {
+            if (isEditMode) {
+                let mouseCoord = d3.mouse(this);
+                let gridCoord = {
+                    x: Math.round(mouseCoord[0] / 15) * 15,
+                    y: Math.round(mouseCoord[1] / 15) * 15
+                }
+
+                let param_xy = {};
+                let currentConfig = selected[selected.length - 1];
+
+                if (selected[selected.length - 1]) {
+                    param_xy.id = currentConfig.id;
+                    param_xy.coord_x = gridCoord.x;
+                    param_xy.coord_y = gridCoord.y;
+                    axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
+                        .then(function (response) {
+                            if (response.status === 200) {
+                                currentConfig.coord.x = gridCoord.x;
+                                currentConfig.coord.y = gridCoord.y;
+                                displayConfig(currentConfig);
+                                let msvg = document.querySelector("#metro > svg");
+                                if (msvg) {
+                                    msvg.remove();
+                                }
+                                selected = []
+                                render(selectedAll)
+                                console.log(response);
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                }
+            } else {
+                isEditMode = false;
+                displayConfig(null);
+            }
+        })
+
     let nodeInsideCircleAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) {
@@ -323,24 +341,6 @@ function render(nodes) {
                 isEditMode = true;
             }
         })
-
-    let nodeNameAttributes = svgNodes
-        .append("text")
-        .text(function (node) {
-            return node.name;
-        })
-        .attr("x", function (node) {
-            return node.coord.x;
-        })
-        .attr("y", function (node) {
-            return node.coord.y - 15;
-        })
-        .attr("font-family", "Andale Mono")
-        .attr("font-size", "9px")
-        .attr("fill", function (node) {
-            return node.metroColor;
-        })
-        .attr("text-anchor", "middle")
 }
 
 
