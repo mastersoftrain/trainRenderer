@@ -35,12 +35,10 @@ class Index {
 }
 
 class Node {
-    constructor(name, id = undefined, metroLine = undefined, coord = {
-        x: 0,
-        y: 0
-    }) {
+    constructor(name, id = undefined, metroLine = undefined, coord = { x: 0, y: 0 }, pathCoord = {x: 0, y: 0}) {
         this._name = name;
         this._coord = coord;
+        this._pathCoord = pathCoord;
         this._id = id;
         this._metroLine = metroLine;
         this._jam;
@@ -70,6 +68,10 @@ class Node {
     set coord(newCoord) {
         this._coord.x = newCoord[0];
         this._coord.y = newCoord[1];
+    }
+
+    get pathCoord(){
+        return this._pathCoord;
     }
 
     get metroLine() {
@@ -117,25 +119,15 @@ function render(nodes) {
 
     let gridData = [];
     for (let x = 0; x < 1500; x += 15) {
-        gridData.push([{
-            x: x,
-            y: 0
-        },
-        {
-            x: x,
-            y: 1000
-        }
+        gridData.push([
+            { x: x, y: 0 },
+            { x: x, y: 1000 }
         ]);
     }
     for (let y = 0; y < 1000; y += 15) {
-        gridData.push([{
-            x: 0,
-            y: y
-        },
-        {
-            x: 1500,
-            y: y
-        }
+        gridData.push([
+            { x: 0, y: y },
+            { x: 1500, y: y }
         ]);
     }
 
@@ -147,7 +139,7 @@ function render(nodes) {
         .y(function (d) {
             return d.y;
         })
-        .curve(d3.curveBasis)
+        .curve(d3.curveBundle.beta(1));
 
     let svgContainer = d3
         .select("#metro")
@@ -189,7 +181,7 @@ function render(nodes) {
     let lineAttributes = svgLines
         .append("path")
         .attr("d", function (neighborsOfNode) {
-            return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[1].coord]);
+            return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
         })
         .attr("stroke-width", 3)
         .attr("stroke", function (neighborsOfNode) {
