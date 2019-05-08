@@ -107,6 +107,7 @@ var transform = null;
 
 function render(nodes) {
     var isEditMode = false;
+    var isPathMode = false;
     let neighborsOfNodes = [];
     for (let i = 0; i < nodes.length; i++) {
         for (let j = 0; j < nodes[i].neighbors.length; j++) {
@@ -286,6 +287,7 @@ function render(nodes) {
                 let currentConfig = selected[selected.length - 1];
 
                 if (selected[selected.length - 1]) {
+                    param_xy.column = "coord";
                     param_xy.id = currentConfig.id;
                     param_xy.coord_x = gridCoord.x;
                     param_xy.coord_y = gridCoord.y;
@@ -308,7 +310,44 @@ function render(nodes) {
                             console.log(error);
                         });
                 }
-            } else {
+            }
+            else if(isPathMode){
+                let mouseCoord = d3.mouse(this);
+                let gridCoord = {
+                    x: Math.round(mouseCoord[0] / 15) * 15,
+                    y: Math.round(mouseCoord[1] / 15) * 15
+                }
+
+                let param_xy = {};
+                let currentConfig = selected[selected.length - 1];
+
+                if (selected[selected.length - 1]) {
+                    param_xy.column = "coord2";
+                    param_xy.id = currentConfig.id;
+                    param_xy.coord_x = gridCoord.x;
+                    param_xy.coord_y = gridCoord.y;
+                    axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
+                        .then(function (response) {
+                            if (response.status === 200) {
+                                currentConfig.pathCoord.x = gridCoord.x;
+                                currentConfig.pathCoord.y = gridCoord.y;
+                                displayConfig(currentConfig);
+                                let msvg = document.querySelector("#metro > svg");
+                                if (msvg) {
+                                    msvg.remove();
+                                }
+                                selected = []
+                                render(selectedAll)
+                                console.log(response);
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                }
+            } 
+            else {
+                isPathMode = false;
                 isEditMode = false;
                 displayConfig(null);
             }
@@ -327,6 +366,7 @@ function render(nodes) {
         .on("click", function (d, i) {
             if (isEditMode) {
                 isEditMode = false;
+                isPathMode = false;
                 selected = []
                 displayConfig(null);
             } else {
@@ -335,6 +375,42 @@ function render(nodes) {
                 let lastSelected = selected[selected.length - 1];
                 displayConfig(lastSelected);
                 isEditMode = true;
+                isPathMode = false;
+            }
+        })
+        .on("contextmenu", function (d, i) {
+            if (isPathMode) {
+                d3.select(this)
+                    .attr("cx", function (node) {
+                        return node.coord.x;
+                    })
+                    .attr("cy", function (node) {
+                        return node.coord.y;
+                    })
+                    .attr("r", 1.3)
+                    .attr("fill", "white")
+
+                    displayConfig(null);
+                    selected = []
+                    isPathMode = false;
+                    isEditMode = false;
+            } else {
+                d3.select(this)
+                    .attr("cx", function (node) {
+                        return node.pathCoord.x;
+                    })
+                    .attr("cy", function (node) {
+                        return node.pathCoord.y;
+                    })
+                    .attr("r", 3)
+                    .attr("fill", "red")
+
+                    selected = []
+                    selected.push(nodes[i])
+                    let lastSelected = selected[selected.length - 1];
+                    displayConfig(lastSelected);
+                    isEditMode = false;
+                    isPathMode = true;
             }
         })
 }
