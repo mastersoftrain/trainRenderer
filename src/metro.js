@@ -35,7 +35,7 @@ class Index {
 }
 
 class Node {
-    constructor(name, id = undefined, metroLine = undefined, coord = { x: 0, y: 0 }, pathCoord = {x: 0, y: 0}) {
+    constructor(name, id = undefined, metroLine = undefined, coord = { x: 0, y: 0 }, pathCoord = { x: 0, y: 0 }) {
         this._name = name;
         this._coord = coord;
         this._pathCoord = pathCoord;
@@ -70,7 +70,7 @@ class Node {
         this._coord.y = newCoord[1];
     }
 
-    get pathCoord(){
+    get pathCoord() {
         return this._pathCoord;
     }
 
@@ -141,22 +141,26 @@ function render(nodes) {
         })
         .curve(d3.curveBundle.beta(1));
 
+    let zoom = d3.zoom()
+
     let svgContainer = d3
         .select("#metro")
         .append("svg")
         .attr("width", "100%")
         .attr("height", "100%")
-        .call(d3.zoom().on("zoom", function () {
-            svgContainer.attr("transform", d3.event.transform)
-            transform = d3.event.transform;
-        }))
+        .call(zoom.transform, d3.zoomIdentity.translate(transform ? transform.x : 0, transform ? transform.y : 0).scale(transform ? transform.k : 1))
+        .call(zoom
+            .on("zoom", function () {
+                svgContainer.attr("transform", d3.event.transform)
+                transform = d3.event.transform;
+            }))
         .append("g")
         .on("contextmenu", function (d) {
             d3.event.preventDefault();
         })
 
     if (transform) {
-        svgContainer.attr("transform", transform)
+        svgContainer.call(zoom.transform, d3.zoomIdentity.translate(transform.x, transform.y).scale(transform.k));
     }
 
     let svgGrids = svgContainer
