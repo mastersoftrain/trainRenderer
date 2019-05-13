@@ -101,15 +101,15 @@ class Node {
         return this._neighbors;
     }
 
-    addNeighbor(newNode) {
-        this._neighbors.push(newNode);
+    addNeighbor(newNeighborObj) {
+        this._neighbors.push(newNeighborObj);
     }
 
     get gScore() {
         return this._gScore;
     }
 
-    set gScore(newGScore){
+    set gScore(newGScore) {
         this._gScore = newGScore;
     }
 
@@ -117,7 +117,7 @@ class Node {
         return this._hScore;
     }
 
-    set hScore(newHScore){
+    set hScore(newHScore) {
         this._hScore = newHScore;
     }
 
@@ -125,16 +125,16 @@ class Node {
         return this._gScore + this._hScore;
     }
 
-    get parent(){
+    get parent() {
         return this._parent;
     }
 
-    set parent(newParent){
+    set parent(newParent) {
         this._parent = newParent;
     }
 }
 
-function manhattanDistance(coord0, coord1){
+function manhattanDistance(coord0, coord1) {
     var d1 = Math.abs(coord1.x - coord0.x);
     var d2 = Math.abs(coord1.y - coord0.x);
     return d1 + d2;
@@ -159,7 +159,7 @@ function pathFind(startNode, endNode) {
             let pathCurrent = currentNode;
             let path = [];
 
-            while(pathCurrent.parent){
+            while (pathCurrent.parent) {
                 path.push(pathCurrent);
                 pathCurrent = pathCurrent.parent;
             }
@@ -171,27 +171,29 @@ function pathFind(startNode, endNode) {
         let neighbors = currentNode.neighbors;
 
         for (let i = 0; i < neighbors.length; i++) {
-            let neighbor = neighbors[i];
-            if (closeList.includes(neighbor))
+            let neighborNode = neighbors[i].node;
+            let neighborcost = neighbors[i].cost;
+
+            if (closeList.includes(neighborNode))
                 continue;
 
-            let gScore = currentNode.gScore + 1;
+            let gScore = currentNode.gScore + neighborcost;
             let gScoreIsBest = false;
 
-            if(!openList.includes(neighbor)){
+            if (!openList.includes(neighborNode)) {
                 gScoreIsBest = true;
-                neighbor.hScore = manhattanDistance(neighbor.coord, endNode.coord);
-                neighbor.parent = null;
-                openList.push(neighbor);
+                neighborNode.hScore = manhattanDistance(neighborNode.coord, endNode.coord);
+                neighborNode.parent = null;
+                openList.push(neighborNode);
             }
-            else if(gScore < neighbor.gScore){
+            else if (gScore < neighborNode.gScore) {
                 gScoreIsBest = true;
             }
 
-            if(gScoreIsBest){
-                neighbor.parent = currentNode;
-                neighbor.gScore = gScore;
-                console.log(neighbor.name);
+            if (gScoreIsBest) {
+                neighborNode.parent = currentNode;
+                neighborNode.gScore = gScore;
+                console.log(neighborNode.name);
             }
         }
     }
@@ -206,9 +208,9 @@ function render(nodes) {
     for (let i = 0; i < nodes.length; i++) {
         for (let j = 0; j < nodes[i].neighbors.length; j++) {
 
-            if (neighborsOfNodes.find(pair => pair[0] === nodes[i].neighbors[j] && pair[1] === nodes[i]))
+            if (neighborsOfNodes.find(pair => pair[0] === nodes[i].neighbors[j].node && pair[1] === nodes[i]))
                 continue;
-            neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j]]);
+            neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j].node]);
         }
     }
 
