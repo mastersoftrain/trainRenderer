@@ -210,6 +210,10 @@ function render(nodes) {
 
             if (neighborsOfNodes.find(pair => pair[0] === nodes[i].neighbors[j].node && pair[1] === nodes[i]))
                 continue;
+
+            if(nodes[i].name == nodes[i].neighbors[j].node.name)
+                continue;
+
             neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j].node]);
         }
     }
