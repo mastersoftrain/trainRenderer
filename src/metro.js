@@ -43,6 +43,9 @@ class Node {
         this._metroLine = metroLine;
         this._jam;
         this._neighbors = [];
+        this._gScore = 0;
+        this._hScore = 0;
+        this._parent;
     }
 
     get name() {
@@ -100,6 +103,97 @@ class Node {
 
     addNeighbor(newNode) {
         this._neighbors.push(newNode);
+    }
+
+    get gScore() {
+        return this._gScore;
+    }
+
+    set gScore(newGScore){
+        this._gScore = newGScore;
+    }
+
+    get hScore() {
+        return this._hScore;
+    }
+
+    set hScore(newHScore){
+        this._hScore = newHScore;
+    }
+
+    get fScore() {
+        return this._gScore + this._hScore;
+    }
+
+    get parent(){
+        return this._parent;
+    }
+
+    set parent(newParent){
+        this._parent = newParent;
+    }
+}
+
+function manhattanDistance(coord0, coord1){
+    var d1 = Math.abs(coord1.x - coord0.x);
+    var d2 = Math.abs(coord1.y - coord0.x);
+    return d1 + d2;
+}
+
+function pathFind(startNode, endNode) {
+    let openList = [];
+    let closeList = []
+
+    openList.push(startNode);
+
+    while (openList.length > 0) {
+
+        let currentNode = openList[0];
+        for (let i = 0; i < openList.length; i++) {
+            let openNode = openList[i];
+            if (openNode.fScore < currentNode.fScore)
+                currentNode = openNode;
+        }
+
+        if (currentNode === endNode) {
+            let pathCurrent = currentNode;
+            let path = [];
+
+            while(pathCurrent.parent){
+                path.push(pathCurrent);
+                pathCurrent = pathCurrent.parent;
+            }
+            return path.reverse();
+        }
+
+        openList = openList.filter(node => node !== currentNode);
+        closeList.push(currentNode);
+        let neighbors = currentNode.neighbors;
+
+        for (let i = 0; i < neighbors.length; i++) {
+            let neighbor = neighbors[i];
+            if (closeList.includes(neighbor))
+                continue;
+
+            let gScore = currentNode.gScore + 1;
+            let gScoreIsBest = false;
+
+            if(!openList.includes(neighbor)){
+                gScoreIsBest = true;
+                neighbor.hScore = manhattanDistance(neighbor.coord, endNode.coord);
+                neighbor.parent = null;
+                openList.push(neighbor);
+            }
+            else if(gScore < neighbor.gScore){
+                gScoreIsBest = true;
+            }
+
+            if(gScoreIsBest){
+                neighbor.parent = currentNode;
+                neighbor.gScore = gScore;
+                console.log(neighbor.name);
+            }
+        }
     }
 }
 
@@ -311,7 +405,7 @@ function render(nodes) {
                         });
                 }
             }
-            else if(isPathMode){
+            else if (isPathMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
                     x: Math.round(mouseCoord[0] / 15) * 15,
@@ -345,7 +439,7 @@ function render(nodes) {
                             console.log(error);
                         });
                 }
-            } 
+            }
             else {
                 isPathMode = false;
                 isEditMode = false;
@@ -390,10 +484,10 @@ function render(nodes) {
                     .attr("r", 1.3)
                     .attr("fill", "white")
 
-                    displayConfig(null);
-                    selected = []
-                    isPathMode = false;
-                    isEditMode = false;
+                displayConfig(null);
+                selected = []
+                isPathMode = false;
+                isEditMode = false;
             } else {
                 d3.select(this)
                     .attr("cx", function (node) {
@@ -405,12 +499,12 @@ function render(nodes) {
                     .attr("r", 3)
                     .attr("fill", "red")
 
-                    selected = []
-                    selected.push(nodes[i])
-                    let lastSelected = selected[selected.length - 1];
-                    displayConfig(lastSelected);
-                    isEditMode = false;
-                    isPathMode = true;
+                selected = []
+                selected.push(nodes[i])
+                let lastSelected = selected[selected.length - 1];
+                displayConfig(lastSelected);
+                isEditMode = false;
+                isPathMode = true;
             }
         })
 }
