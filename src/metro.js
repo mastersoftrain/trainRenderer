@@ -140,7 +140,7 @@ function manhattanDistance(coord0, coord1) {
     return d1 + d2;
 }
 
-function pathFind(startNode, endNode) {
+function findPath(startNode, endNode) {
     let openList = [];
     let closeList = []
 
@@ -163,6 +163,7 @@ function pathFind(startNode, endNode) {
                 path.push(pathCurrent);
                 pathCurrent = pathCurrent.parent;
             }
+            path.push(startNode);
             return path.reverse();
         }
 
@@ -193,7 +194,6 @@ function pathFind(startNode, endNode) {
             if (gScoreIsBest) {
                 neighborNode.parent = currentNode;
                 neighborNode.gScore = gScore;
-                console.log(neighborNode.name);
             }
         }
     }
