@@ -15,8 +15,12 @@ class Random {
         return Math.random();
     }
 
-    static range(min, max) {
+    static rangeInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    static range(min, max){
+        return Math.random() * (max - min) + min;
     }
 }
 
@@ -202,6 +206,8 @@ function findPath(startNode, endNode) {
 var transform = null;
 
 function render(nodes) {
+    let gridSize = 15;
+
     var isEditMode = false;
     var isPathMode = false;
     let neighborsOfNodes = [];
@@ -211,7 +217,7 @@ function render(nodes) {
             if (neighborsOfNodes.find(pair => pair[0] === nodes[i].neighbors[j].node && pair[1] === nodes[i]))
                 continue;
 
-            if(nodes[i].name == nodes[i].neighbors[j].node.name)
+            if (nodes[i].name == nodes[i].neighbors[j].node.name)
                 continue;
 
             neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j].node]);
@@ -219,26 +225,26 @@ function render(nodes) {
     }
 
     let gridData = [];
-    for (let x = 0; x < 1500; x += 15) {
+    for (let x = 0; x < 100; x += 1) {
         gridData.push([
             { x: x, y: 0 },
-            { x: x, y: 1000 }
+            { x: x, y: 70 }
         ]);
     }
-    for (let y = 0; y < 1000; y += 15) {
+    for (let y = 0; y < 70; y += 1) {
         gridData.push([
             { x: 0, y: y },
-            { x: 1500, y: y }
+            { x: 100, y: y }
         ]);
     }
 
     let lineGenerator = d3
         .line()
         .x(function (d) {
-            return d.x;
+            return d.x * gridSize;
         })
         .y(function (d) {
-            return d.y;
+            return d.y * gridSize;
         })
         .curve(d3.curveBundle.beta(1));
 
@@ -307,12 +313,12 @@ function render(nodes) {
             for (let i = noiseAmount; i >= 0; i--) {
                 let newCoord = {};
                 let theta = i / noiseAmount;
-                newCoord["x"] = theta * startCoord.x + (1 - theta) * endCoord.x;
-                newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
+                newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
+                newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
 
                 if (i != 0 && i != noiseAmount) {
-                    newCoord.x += Random.range(-4, 4);
-                    newCoord.y += Random.range(-4, 4);
+                    newCoord.x += Random.range(-0.3, 0.3);
+                    newCoord.y += Random.range(-0.3, 0.3);
                 }
                 lineData.push(newCoord);
             }
@@ -326,7 +332,7 @@ function render(nodes) {
         .attr("fill", "none")
         .style("stroke-opacity", 0.9)
         .transition()
-        .duration(Random.range(750, 3000))
+        .duration(Random.rangeInt(750, 3000))
         .attrTween("stroke-dashoffset", tweenDashOffset)
         .attrTween("stroke-dasharray", tweenDash)
         .ease(d3.easePolyIn)
@@ -340,10 +346,10 @@ function render(nodes) {
     let nodeAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) {
-            return node.coord.x;
+            return node.coord.x * gridSize;
         })
         .attr("cy", function (node) {
-            return node.coord.y;
+            return node.coord.y * gridSize;
         })
         .attr("r", 2)
         .attr("fill", function (node) {
@@ -356,10 +362,10 @@ function render(nodes) {
             return node.name;
         })
         .attr("x", function (node) {
-            return node.coord.x;
+            return node.coord.x * gridSize;
         })
         .attr("y", function (node) {
-            return node.coord.y - 15;
+            return (node.coord.y - 1) * gridSize;
         })
         .attr("font-family", "Andale Mono")
         .attr("font-size", "9px")
@@ -379,8 +385,8 @@ function render(nodes) {
             if (isEditMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
-                    x: Math.round(mouseCoord[0] / 15) * 15,
-                    y: Math.round(mouseCoord[1] / 15) * 15
+                    x: Math.round(mouseCoord[0] / 15),
+                    y: Math.round(mouseCoord[1] / 15)
                 }
 
                 let param_xy = {};
@@ -414,8 +420,8 @@ function render(nodes) {
             else if (isPathMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
-                    x: Math.round(mouseCoord[0] / 15) * 15,
-                    y: Math.round(mouseCoord[1] / 15) * 15
+                    x: Math.round(mouseCoord[0] / 15),
+                    y: Math.round(mouseCoord[1] / 15)
                 }
 
                 let param_xy = {};
@@ -456,10 +462,10 @@ function render(nodes) {
     let nodeInsideCircleAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) {
-            return node.coord.x;
+            return node.coord.x * gridSize;
         })
         .attr("cy", function (node) {
-            return node.coord.y;
+            return node.coord.y * gridSize;
         })
         .attr("r", 1.3)
         .attr("fill", "white")
@@ -482,10 +488,10 @@ function render(nodes) {
             if (isPathMode) {
                 d3.select(this)
                     .attr("cx", function (node) {
-                        return node.coord.x;
+                        return node.coord.x * gridSize;
                     })
                     .attr("cy", function (node) {
-                        return node.coord.y;
+                        return node.coord.y * gridSize;
                     })
                     .attr("r", 1.3)
                     .attr("fill", "white")
@@ -497,10 +503,10 @@ function render(nodes) {
             } else {
                 d3.select(this)
                     .attr("cx", function (node) {
-                        return node.pathCoord.x;
+                        return node.pathCoord.x * gridSize;
                     })
                     .attr("cy", function (node) {
-                        return node.pathCoord.y;
+                        return node.pathCoord.y * gridSize;
                     })
                     .attr("r", 3)
                     .attr("fill", "red")
@@ -543,7 +549,7 @@ function tweenDashReverse() {
 function animateLineJam(path) {
     d3.active(this)
         .transition()
-        .duration(Random.range(750, 3000))
+        .duration(Random.rangeInt(750, 3000))
         .attrTween("stroke-dasharray", tweenDash)
         .on("start", animateLineJam)
 }
