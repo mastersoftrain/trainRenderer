@@ -206,7 +206,7 @@ function findPath(startNode, endNode) {
 var transform = null;
 
 function render(nodes) {
-    let gridSize = 15;
+    let gridSize = 30;
 
     var isEditMode = false;
     var isPathMode = false;
@@ -294,7 +294,7 @@ function render(nodes) {
         .attr("d", function (neighborsOfNode) {
             return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
         })
-        .attr("stroke-width", 3)
+        .attr("stroke-width", 5)
         .attr("stroke", function (neighborsOfNode) {
             return neighborsOfNode[0].metroColor;
         })
@@ -351,7 +351,7 @@ function render(nodes) {
         .attr("cy", function (node) {
             return node.coord.y * gridSize;
         })
-        .attr("r", 2)
+        .attr("r", 6)
         .attr("fill", function (node) {
             return node.metroColor;
         })
@@ -365,7 +365,7 @@ function render(nodes) {
             return node.coord.x * gridSize;
         })
         .attr("y", function (node) {
-            return (node.coord.y - 1) * gridSize;
+            return (node.coord.y - 0.4) * gridSize;
         })
         .attr("font-family", "Andale Mono")
         .attr("font-size", "9px")
@@ -467,7 +467,7 @@ function render(nodes) {
         .attr("cy", function (node) {
             return node.coord.y * gridSize;
         })
-        .attr("r", 1.3)
+        .attr("r", 4)
         .attr("fill", "white")
         .on("click", function (d, i) {
             if (isEditMode) {
@@ -493,7 +493,7 @@ function render(nodes) {
                     .attr("cy", function (node) {
                         return node.coord.y * gridSize;
                     })
-                    .attr("r", 1.3)
+                    .attr("r", 4)
                     .attr("fill", "white")
 
                 displayConfig(null);
@@ -508,7 +508,7 @@ function render(nodes) {
                     .attr("cy", function (node) {
                         return node.pathCoord.y * gridSize;
                     })
-                    .attr("r", 3)
+                    .attr("r", 6)
                     .attr("fill", "red")
 
                 selected = []
