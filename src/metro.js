@@ -206,6 +206,8 @@ function findPath(startNode, endNode) {
 var transform = null;
 
 function render(nodes) {
+    d3.select("#metro").select("svg").remove(); 
+
     let gridSize = 30;
 
     var isEditMode = false;
@@ -378,15 +380,15 @@ function render(nodes) {
         .append("rect")
         .attr("x", 0)
         .attr("y", 0)
-        .attr("width", 1500)
-        .attr("height", 1000)
+        .attr("width", 100 * gridSize)
+        .attr("height", 70 * gridSize)
         .attr("fill-opacity", "0")
         .on("contextmenu", function (d) {
             if (isEditMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
-                    x: Math.round(mouseCoord[0] / 15),
-                    y: Math.round(mouseCoord[1] / 15)
+                    x: Math.round(mouseCoord[0] / gridSize),
+                    y: Math.round(mouseCoord[1] / gridSize)
                 }
 
                 let param_xy = {};
@@ -403,10 +405,6 @@ function render(nodes) {
                                 currentConfig.coord.x = gridCoord.x;
                                 currentConfig.coord.y = gridCoord.y;
                                 displayConfig(currentConfig);
-                                let msvg = document.querySelector("#metro > svg");
-                                if (msvg) {
-                                    msvg.remove();
-                                }
                                 selected = []
                                 render(selectedAll)
                                 console.log(response);
@@ -420,8 +418,8 @@ function render(nodes) {
             else if (isPathMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
-                    x: Math.round(mouseCoord[0] / 15),
-                    y: Math.round(mouseCoord[1] / 15)
+                    x: Math.round(mouseCoord[0] / gridSize),
+                    y: Math.round(mouseCoord[1] / gridSize)
                 }
 
                 let param_xy = {};
@@ -438,10 +436,6 @@ function render(nodes) {
                                 currentConfig.pathCoord.x = gridCoord.x;
                                 currentConfig.pathCoord.y = gridCoord.y;
                                 displayConfig(currentConfig);
-                                let msvg = document.querySelector("#metro > svg");
-                                if (msvg) {
-                                    msvg.remove();
-                                }
                                 selected = []
                                 render(selectedAll)
                                 console.log(response);
