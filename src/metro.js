@@ -15,12 +15,8 @@ class Random {
         return Math.random();
     }
 
-    static rangeInt(min, max) {
+    static range(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    static range(min, max){
-        return Math.random() * (max - min) + min;
     }
 }
 
@@ -148,6 +144,7 @@ function findPath(startNode, endNode) {
     let openList = [];
     let closeList = []
 
+    startNode.parent = null;
     openList.push(startNode);
 
     while (openList.length > 0) {
@@ -188,7 +185,6 @@ function findPath(startNode, endNode) {
             if (!openList.includes(neighborNode)) {
                 gScoreIsBest = true;
                 neighborNode.hScore = manhattanDistance(neighborNode.coord, endNode.coord);
-                neighborNode.parent = null;
                 openList.push(neighborNode);
             }
             else if (gScore < neighborNode.gScore) {
@@ -206,10 +202,6 @@ function findPath(startNode, endNode) {
 var transform = null;
 
 function render(nodes) {
-    d3.select("#metro").select("svg").remove(); 
-
-    let gridSize = 30;
-
     var isEditMode = false;
     var isPathMode = false;
     let neighborsOfNodes = [];
@@ -219,7 +211,7 @@ function render(nodes) {
             if (neighborsOfNodes.find(pair => pair[0] === nodes[i].neighbors[j].node && pair[1] === nodes[i]))
                 continue;
 
-            if (nodes[i].name == nodes[i].neighbors[j].node.name)
+            if(nodes[i].name == nodes[i].neighbors[j].node.name)
                 continue;
 
             neighborsOfNodes.push([nodes[i], nodes[i].neighbors[j].node]);
@@ -227,26 +219,26 @@ function render(nodes) {
     }
 
     let gridData = [];
-    for (let x = 0; x < 100; x += 1) {
+    for (let x = 0; x < 1500; x += 15) {
         gridData.push([
             { x: x, y: 0 },
-            { x: x, y: 70 }
+            { x: x, y: 1000 }
         ]);
     }
-    for (let y = 0; y < 70; y += 1) {
+    for (let y = 0; y < 1000; y += 15) {
         gridData.push([
             { x: 0, y: y },
-            { x: 100, y: y }
+            { x: 1500, y: y }
         ]);
     }
 
     let lineGenerator = d3
         .line()
         .x(function (d) {
-            return d.x * gridSize;
+            return d.x;
         })
         .y(function (d) {
-            return d.y * gridSize;
+            return d.y;
         })
         .curve(d3.curveBundle.beta(1));
 
@@ -296,7 +288,7 @@ function render(nodes) {
         .attr("d", function (neighborsOfNode) {
             return lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
         })
-        .attr("stroke-width", 5)
+        .attr("stroke-width", 3)
         .attr("stroke", function (neighborsOfNode) {
             return neighborsOfNode[0].metroColor;
         })
@@ -315,12 +307,12 @@ function render(nodes) {
             for (let i = noiseAmount; i >= 0; i--) {
                 let newCoord = {};
                 let theta = i / noiseAmount;
-                newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
-                newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
+                newCoord["x"] = theta * startCoord.x + (1 - theta) * endCoord.x;
+                newCoord["y"] = theta * startCoord.y + (1 - theta) * endCoord.y;
 
                 if (i != 0 && i != noiseAmount) {
-                    newCoord.x += Random.range(-0.3, 0.3);
-                    newCoord.y += Random.range(-0.3, 0.3);
+                    newCoord.x += Random.range(-4, 4);
+                    newCoord.y += Random.range(-4, 4);
                 }
                 lineData.push(newCoord);
             }
@@ -334,7 +326,7 @@ function render(nodes) {
         .attr("fill", "none")
         .style("stroke-opacity", 0.9)
         .transition()
-        .duration(Random.rangeInt(750, 3000))
+        .duration(Random.range(750, 3000))
         .attrTween("stroke-dashoffset", tweenDashOffset)
         .attrTween("stroke-dasharray", tweenDash)
         .ease(d3.easePolyIn)
@@ -348,12 +340,12 @@ function render(nodes) {
     let nodeAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) {
-            return node.coord.x * gridSize;
+            return node.coord.x;
         })
         .attr("cy", function (node) {
-            return node.coord.y * gridSize;
+            return node.coord.y;
         })
-        .attr("r", 6)
+        .attr("r", 2)
         .attr("fill", function (node) {
             return node.metroColor;
         })
@@ -364,10 +356,10 @@ function render(nodes) {
             return node.name;
         })
         .attr("x", function (node) {
-            return node.coord.x * gridSize;
+            return node.coord.x;
         })
         .attr("y", function (node) {
-            return (node.coord.y - 0.4) * gridSize;
+            return node.coord.y - 15;
         })
         .attr("font-family", "Andale Mono")
         .attr("font-size", "9px")
@@ -380,15 +372,15 @@ function render(nodes) {
         .append("rect")
         .attr("x", 0)
         .attr("y", 0)
-        .attr("width", 100 * gridSize)
-        .attr("height", 70 * gridSize)
+        .attr("width", 1500)
+        .attr("height", 1000)
         .attr("fill-opacity", "0")
         .on("contextmenu", function (d) {
             if (isEditMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
-                    x: Math.round(mouseCoord[0] / gridSize),
-                    y: Math.round(mouseCoord[1] / gridSize)
+                    x: Math.round(mouseCoord[0] / 15) * 15,
+                    y: Math.round(mouseCoord[1] / 15) * 15
                 }
 
                 let param_xy = {};
@@ -405,6 +397,10 @@ function render(nodes) {
                                 currentConfig.coord.x = gridCoord.x;
                                 currentConfig.coord.y = gridCoord.y;
                                 displayConfig(currentConfig);
+                                let msvg = document.querySelector("#metro > svg");
+                                if (msvg) {
+                                    msvg.remove();
+                                }
                                 selected = []
                                 render(selectedAll)
                                 console.log(response);
@@ -418,8 +414,8 @@ function render(nodes) {
             else if (isPathMode) {
                 let mouseCoord = d3.mouse(this);
                 let gridCoord = {
-                    x: Math.round(mouseCoord[0] / gridSize),
-                    y: Math.round(mouseCoord[1] / gridSize)
+                    x: Math.round(mouseCoord[0] / 15) * 15,
+                    y: Math.round(mouseCoord[1] / 15) * 15
                 }
 
                 let param_xy = {};
@@ -436,6 +432,10 @@ function render(nodes) {
                                 currentConfig.pathCoord.x = gridCoord.x;
                                 currentConfig.pathCoord.y = gridCoord.y;
                                 displayConfig(currentConfig);
+                                let msvg = document.querySelector("#metro > svg");
+                                if (msvg) {
+                                    msvg.remove();
+                                }
                                 selected = []
                                 render(selectedAll)
                                 console.log(response);
@@ -456,12 +456,12 @@ function render(nodes) {
     let nodeInsideCircleAttributes = svgNodes
         .append("circle")
         .attr("cx", function (node) {
-            return node.coord.x * gridSize;
+            return node.coord.x;
         })
         .attr("cy", function (node) {
-            return node.coord.y * gridSize;
+            return node.coord.y;
         })
-        .attr("r", 4)
+        .attr("r", 1.3)
         .attr("fill", "white")
         .on("click", function (d, i) {
             if (isEditMode) {
@@ -482,12 +482,12 @@ function render(nodes) {
             if (isPathMode) {
                 d3.select(this)
                     .attr("cx", function (node) {
-                        return node.coord.x * gridSize;
+                        return node.coord.x;
                     })
                     .attr("cy", function (node) {
-                        return node.coord.y * gridSize;
+                        return node.coord.y;
                     })
-                    .attr("r", 4)
+                    .attr("r", 1.3)
                     .attr("fill", "white")
 
                 displayConfig(null);
@@ -497,12 +497,12 @@ function render(nodes) {
             } else {
                 d3.select(this)
                     .attr("cx", function (node) {
-                        return node.pathCoord.x * gridSize;
+                        return node.pathCoord.x;
                     })
                     .attr("cy", function (node) {
-                        return node.pathCoord.y * gridSize;
+                        return node.pathCoord.y;
                     })
-                    .attr("r", 6)
+                    .attr("r", 3)
                     .attr("fill", "red")
 
                 selected = []
@@ -543,7 +543,7 @@ function tweenDashReverse() {
 function animateLineJam(path) {
     d3.active(this)
         .transition()
-        .duration(Random.rangeInt(750, 3000))
+        .duration(Random.range(750, 3000))
         .attrTween("stroke-dasharray", tweenDash)
         .on("start", animateLineJam)
 }
