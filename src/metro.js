@@ -276,6 +276,10 @@ class Renderer {
                 if (newNodes[i].name == newNodes[i].neighbors[j].node.name)
                     continue;
 
+                if (!this._nodes.find(node => node === newNodes[i].neighbors[j].node)){
+                    continue;
+                }
+
                 this._neighborsOfNodes.push([newNodes[i], newNodes[i].neighbors[j].node]);
             }
         }
