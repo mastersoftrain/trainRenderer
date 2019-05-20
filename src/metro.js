@@ -140,7 +140,7 @@ class Renderer {
     constructor() {
         if (Renderer.instance) return Renderer.instance;
         let self = this;
-        this._gridSize = 70;
+        this._gridSize = 50;
         this._nodes = [];
         this._gridData = [];
         this._isEditMode = false;
@@ -432,12 +432,21 @@ class Renderer {
             .attr("r", 4)
             .attr("fill", "white")
             .on("click", function (d, i) {
-                if (self._isEditMode) {
+                if (self._isEditMode && selected[selected.length - 1] !== self._nodes[i]) {
+                    selected = []
+                    selected.push(self._nodes[i])
+                    let lastSelected = selected[selected.length - 1];
+                    displayConfig(lastSelected);
+                    self._isEditMode = true;
+                    self._isPathMode = false;
+                } 
+                else if (self._isEditMode) {
                     self._isEditMode = false;
                     self._isPathMode = false;
                     selected = []
                     displayConfig(null);
-                } else {
+                }
+                else {
                     selected = []
                     selected.push(self._nodes[i])
                     let lastSelected = selected[selected.length - 1];
@@ -677,7 +686,7 @@ function render(nodes) {
     renderer = new Renderer();
 
     renderer.nodes = nodes;
-    renderer.renderGrid(50, 40);
+    renderer.renderGrid(100, 70);
     renderer.renderMetroLines();
     renderer.renderMetroNodes();
     renderer.renderMetroJams();
