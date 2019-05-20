@@ -308,14 +308,6 @@ class Renderer {
             .selectAll("path")
             .data(this._gridData)
 
-        svgGrids
-            .attr("d", function (grid) {
-                return self._lineGenerator([grid[0], grid[1]]);
-            })
-            .attr("stroke-width", 1)
-            .attr("stroke", "black")
-            .style("stroke-opacity", 0.1)
-
         svgGrids.exit().remove();
 
         svgGrids
@@ -339,23 +331,8 @@ class Renderer {
             .attr("d", function (neighborsOfNode) {
                 return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
             })
-            .attr("stroke-width", 5)
-            .attr("stroke", function (neighborsOfNode) {
-                return neighborsOfNode[0].metroColor;
-            })
-            .attr("fill", "none")
 
         svgLines.exit().remove();
-
-        svgLines
-            .attr("d", function (neighborsOfNode) {
-                return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
-            })
-            .attr("stroke-width", 5)
-            .attr("stroke", function (neighborsOfNode) {
-                return neighborsOfNode[0].metroColor;
-            })
-            .attr("fill", "none")
 
         svgLines
             .enter()
@@ -385,10 +362,6 @@ class Renderer {
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
-            .attr("r", 6)
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
 
         svgNodes
             .enter()
@@ -415,8 +388,6 @@ class Renderer {
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
-            .attr("r", 4)
-            .attr("fill", "white")
 
         svgInsideNodes.exit().remove();
 
@@ -496,21 +467,12 @@ class Renderer {
             .data(this._nodes)
 
         svgNodeNames
-            .text(function (node) {
-                return node.name;
-            })
             .attr("x", function (node) {
                 return node.coord.x * self._gridSize;
             })
             .attr("y", function (node) {
                 return (node.coord.y - 0.4) * self._gridSize;
             })
-            .attr("font-family", "Andale Mono")
-            .attr("font-size", "9px")
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
-            .attr("text-anchor", "middle")
 
         svgNodeNames.exit().remove();
 
