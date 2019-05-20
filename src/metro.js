@@ -146,7 +146,7 @@ class Renderer {
         this._isEditMode = false;
         this._isPathMode = false;
         this._neighborsOfNodes = [];
-        this._zoom = d3.zoom()
+        this._zoom = d3.zoom().scaleExtent([0.3, 4]).translateExtent([[0, 0], [5000, 3500]]);
         this._lineGenerator = d3
             .line()
             .x(function (d) {
@@ -161,14 +161,18 @@ class Renderer {
             .append("svg")
             .attr("width", "100%")
             .attr("height", "100%")
+            .call(this._zoom.transform, d3.zoomIdentity.translate(267.59375, -52).scale(0.3))
             .call(this._zoom
                 .on("zoom", function () {
                     self._svgContainer.attr("transform", d3.event.transform)
-                }))
+                })
+            )
             .on("contextmenu", function (d) {
                 d3.event.preventDefault();
             })
             .append("g")
+
+        this._svgContainer.call(this._zoom.transform, d3.zoomIdentity.translate(267.59375, -52).scale(0.3))
 
         this._svgCoordSelectorGroup = this._svgContainer.append("g");
         this._svgGridGroup = this._svgContainer.append("g");
@@ -326,22 +330,38 @@ class Renderer {
             .data(this._neighborsOfNodes)
 
         svgLines
+            .exit()
+            .remove();
+
+        svgLines
+            .transition()
+            .duration(500)
             .attr("d", function (neighborsOfNode) {
                 return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
             })
-
-        svgLines.exit().remove();
 
         svgLines
             .enter()
             .append("path")
-            .attr("d", function (neighborsOfNode) {
-                return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
-            })
+            .classed("line", true)
             .attr("stroke", function (neighborsOfNode) {
                 return neighborsOfNode[0].metroColor;
             })
-            .classed("line", true)
+            .attr("d", function (neighborsOfNode) {
+                let lineCoords = JSON.parse(JSON.stringify([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]));
+                for (let i = 0; i < lineCoords.length; i++) {
+                    lineCoords[i].y = lineCoords[i].y - 1;
+                }
+                return self._lineGenerator(lineCoords);
+            })
+            .style("opacity", 0)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("d", function (neighborsOfNode) {
+                return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
+            })
+            .style("opacity", 1);
     }
 
     renderMetroNodes() {
@@ -350,9 +370,13 @@ class Renderer {
             .selectAll("circle")
             .data(this._nodes)
 
-        svgNodes.exit().remove();
+        svgNodes
+            .exit()
+            .remove();
 
         svgNodes
+            .transition()
+            .duration(500)
             .attr("cx", function (node) {
                 return node.coord.x * self._gridSize;
             })
@@ -363,6 +387,16 @@ class Renderer {
         svgNodes
             .enter()
             .append("circle")
+            .classed("node", true)
+            .attr("cx", function (node) {
+                return node.coord.x * self._gridSize;
+            })
+            .attr("cy", function (node) {
+                return (node.coord.y - 1) * self._gridSize;
+            })
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
             .attr("cx", function (node) {
                 return node.coord.x * self._gridSize;
             })
@@ -372,33 +406,28 @@ class Renderer {
             .attr("fill", function (node) {
                 return node.metroColor;
             })
-            .classed("node", true)
 
         let svgInsideNodes = this._svgInsideNodeGroup
             .selectAll("circle")
             .data(this._nodes)
 
+        svgInsideNodes.exit().remove();
+
         svgInsideNodes
+            .classed("node-inside", true)
+            .classed("node-select", false)
+            .transition()
+            .duration(500)
             .attr("cx", function (node) {
                 return node.coord.x * self._gridSize;
             })
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
-            .classed("node-inside", true)
-            .classed("node-select", false)
-
-        svgInsideNodes.exit().remove();
 
         svgInsideNodes
             .enter()
             .append("circle")
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return node.coord.y * self._gridSize;
-            })
             .classed("node-inside", true)
             .on("click", function (d, i) {
                 if (self._isEditMode && selected[selected.length - 1] === self._nodes[i]) {
@@ -436,6 +465,12 @@ class Renderer {
                     self._isEditMode = false;
                 } else {
                     d3.select(this)
+                        .attr("cx", function (node) {
+                            return node.pathCoord.x * self._gridSize;
+                        })
+                        .attr("cy", function (node) {
+                            return node.pathCoord.y * self._gridSize;
+                        })
                         .classed("node-inside", false)
                         .classed("node-select", true)
 
@@ -447,37 +482,67 @@ class Renderer {
                     self._isPathMode = true;
                 }
             })
+            .attr("cx", function (node) {
+                return node.coord.x * self._gridSize;
+            })
+            .attr("cy", function (node) {
+                return (node.coord.y - 1) * self._gridSize;
+            })
+            .style("opacity", 0)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("cx", function (node) {
+                return node.coord.x * self._gridSize;
+            })
+            .attr("cy", function (node) {
+                return node.coord.y * self._gridSize;
+            })
+            .style("opacity", 1)
 
         let svgNodeNames = this._svgNodeNameGroup
             .selectAll("text")
             .data(this._nodes)
 
+        svgNodeNames.exit().remove();
+
         svgNodeNames
+            .transition()
+            .duration(500)
             .attr("x", function (node) {
                 return node.coord.x * self._gridSize;
             })
             .attr("y", function (node) {
                 return (node.coord.y - 0.4) * self._gridSize;
             })
-
-        svgNodeNames.exit().remove();
 
         svgNodeNames
             .enter()
             .append("text")
+            .attr("class", "node-name")
             .text(function (node) {
                 return node.name;
             })
+            .attr("fill", function (node) {
+                return node.metroColor;
+            })
+            .attr("x", function (node) {
+                return node.coord.x * self._gridSize;
+            })
+            .attr("y", function (node) {
+                return (node.coord.y - 1.4) * self._gridSize;
+            })
+            .style("opacity", 0)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
             .attr("x", function (node) {
                 return node.coord.x * self._gridSize;
             })
             .attr("y", function (node) {
                 return (node.coord.y - 0.4) * self._gridSize;
             })
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
-            .attr("class", "node-name")
+            .style("opacity", 1)
     }
 
     renderMetroJams() {
@@ -703,4 +768,3 @@ function findPath(startNode, endNode) {
         }
     }
 }
-
