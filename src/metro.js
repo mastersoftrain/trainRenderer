@@ -316,9 +316,7 @@ class Renderer {
             .attr("d", function (grid) {
                 return self._lineGenerator([grid[0], grid[1]]);
             })
-            .attr("stroke-width", 1)
-            .attr("stroke", "black")
-            .style("stroke-opacity", 0.1)
+            .attr("class", "grid")
     }
 
     renderMetroLines() {
@@ -340,11 +338,10 @@ class Renderer {
             .attr("d", function (neighborsOfNode) {
                 return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
             })
-            .attr("stroke-width", 5)
             .attr("stroke", function (neighborsOfNode) {
                 return neighborsOfNode[0].metroColor;
             })
-            .attr("fill", "none")
+            .attr("class", "line")
     }
 
     renderMetroNodes() {
@@ -372,10 +369,10 @@ class Renderer {
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
-            .attr("r", 6)
             .attr("fill", function (node) {
                 return node.metroColor;
             })
+            .attr("class", "node")
 
         let svgInsideNodes = this._svgInsideNodeGroup
             .selectAll("circle")
@@ -400,8 +397,7 @@ class Renderer {
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
-            .attr("r", 4)
-            .attr("fill", "white")
+            .attr("class", "node-inside")
             .on("click", function (d, i) {
                 if (self._isEditMode && selected[selected.length - 1] !== self._nodes[i]) {
                     selected = []
@@ -488,12 +484,10 @@ class Renderer {
             .attr("y", function (node) {
                 return (node.coord.y - 0.4) * self._gridSize;
             })
-            .attr("font-family", "Andale Mono")
-            .attr("font-size", "9px")
             .attr("fill", function (node) {
                 return node.metroColor;
             })
-            .attr("text-anchor", "middle")
+            .attr("class", "node-name")
     }
 
     renderMetroJams() {
