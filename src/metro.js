@@ -316,7 +316,7 @@ class Renderer {
             .attr("d", function (grid) {
                 return self._lineGenerator([grid[0], grid[1]]);
             })
-            .attr("class", "grid")
+            .classed("grid", true)
     }
 
     renderMetroLines() {
@@ -341,7 +341,7 @@ class Renderer {
             .attr("stroke", function (neighborsOfNode) {
                 return neighborsOfNode[0].metroColor;
             })
-            .attr("class", "line")
+            .classed("line", true)
     }
 
     renderMetroNodes() {
@@ -372,7 +372,7 @@ class Renderer {
             .attr("fill", function (node) {
                 return node.metroColor;
             })
-            .attr("class", "node")
+            .classed("node", true)
 
         let svgInsideNodes = this._svgInsideNodeGroup
             .selectAll("circle")
@@ -385,6 +385,8 @@ class Renderer {
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
+            .classed("node-inside", true)
+            .classed("node-select", false)
 
         svgInsideNodes.exit().remove();
 
@@ -397,23 +399,23 @@ class Renderer {
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
             })
-            .attr("class", "node-inside")
+            .classed("node-inside", true)
             .on("click", function (d, i) {
-                if (self._isEditMode && selected[selected.length - 1] !== self._nodes[i]) {
-                    selected = []
-                    selected.push(self._nodes[i])
-                    let lastSelected = selected[selected.length - 1];
-                    displayConfig(lastSelected);
-                    self._isEditMode = true;
-                    self._isPathMode = false;
-                } 
-                else if (self._isEditMode) {
+                if (self._isEditMode && selected[selected.length - 1] === self._nodes[i]) {
+                    d3.select(this)
+                        .classed("node-inside", true)
+                        .classed("node-select", false)
+
                     self._isEditMode = false;
                     self._isPathMode = false;
                     selected = []
                     displayConfig(null);
                 }
                 else {
+                    d3.select(this)
+                        .classed("node-inside", false)
+                        .classed("node-select", true)
+
                     selected = []
                     selected.push(self._nodes[i])
                     let lastSelected = selected[selected.length - 1];
@@ -425,14 +427,8 @@ class Renderer {
             .on("contextmenu", function (d, i) {
                 if (self._isPathMode) {
                     d3.select(this)
-                        .attr("cx", function (node) {
-                            return node.coord.x * self._gridSize;
-                        })
-                        .attr("cy", function (node) {
-                            return node.coord.y * self._gridSize;
-                        })
-                        .attr("r", 4)
-                        .attr("fill", "white")
+                        .classed("node-inside", true)
+                        .classed("node-select", false)
 
                     displayConfig(null);
                     selected = []
@@ -440,14 +436,8 @@ class Renderer {
                     self._isEditMode = false;
                 } else {
                     d3.select(this)
-                        .attr("cx", function (node) {
-                            return node.pathCoord.x * self._gridSize;
-                        })
-                        .attr("cy", function (node) {
-                            return node.pathCoord.y * self._gridSize;
-                        })
-                        .attr("r", 10)
-                        .attr("fill", "red")
+                        .classed("node-inside", false)
+                        .classed("node-select", true)
 
                     selected = []
                     selected.push(self._nodes[i])
