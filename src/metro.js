@@ -276,9 +276,8 @@ class Renderer {
                 if (newNodes[i].name == newNodes[i].neighbors[j].node.name)
                     continue;
 
-                if (!this._nodes.find(node => node === newNodes[i].neighbors[j].node)){
+                if (!this._nodes.find(node => node === newNodes[i].neighbors[j].node))
                     continue;
-                }
 
                 this._neighborsOfNodes.push([newNodes[i], newNodes[i].neighbors[j].node]);
             }
@@ -343,6 +342,9 @@ class Renderer {
             .attr("d", function (neighborsOfNode) {
                 return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
             })
+            .attr("stroke", function (neighborsOfNode) {
+                return neighborsOfNode[0].metroColor;
+            })
 
         svgLines
             .enter()
@@ -386,6 +388,9 @@ class Renderer {
             })
             .attr("cy", function (node) {
                 return node.coord.y * self._gridSize;
+            })
+            .attr("fill", function (node) {
+                return node.metroColor;
             })
 
         svgNodes
@@ -518,6 +523,9 @@ class Renderer {
             })
             .attr("y", function (node) {
                 return (node.coord.y - 0.4) * self._gridSize;
+            })
+            .attr("fill", function (node) {
+                return node.metroColor;
             })
 
         svgNodeNames
