@@ -174,6 +174,7 @@ class Renderer {
         this._svgLineGroup = this._svgContainer.append("g");
         this._svgNodeGroup = this._svgContainer.append("g");
         this._svgInsideNodeGroup = this._svgContainer.append("g");
+        this._svgNodeNmaeBackgroundGroup = this._svgContainer.append("g");
         this._svgNodeNameGroup = this._svgContainer.append("g");
         this._svgCoordSelectorGroup
             .append("rect")
@@ -461,6 +462,10 @@ class Renderer {
             .attr("cx", function (node) { return node.coord.x * self._gridSize; })
             .attr("cy", function (node) { return node.coord.y * self._gridSize; })
             .style("opacity", 1)
+    }
+
+    renderMetroNames() {
+        let self = this;
 
         let svgNodeNames = this._svgNodeNameGroup
             .selectAll("text")
@@ -491,6 +496,38 @@ class Renderer {
             .attr("x", function (node) { return node.coord.x * self._gridSize; })
             .attr("y", function (node) { return (node.coord.y - 0.4) * self._gridSize; })
             .style("opacity", 1)
+
+        let svgNodeNameBackgrounds = this._svgNodeNmaeBackgroundGroup
+            .selectAll("rect")
+            .data(this._svgNodeNameGroup.selectAll("text").nodes())
+
+        svgNodeNameBackgrounds.exit().remove();
+
+        svgNodeNameBackgrounds
+            .transition()
+            .duration(500)
+            .attr("x", function (node) { return node.__data__.coord.x * self._gridSize - node.getBBox().width / 2 - 3; })
+            .attr("y", function (node) { return (node.__data__.coord.y - 0.4) * self._gridSize - node.getBBox().height + 1; })
+            .attr("stroke", function (node) { return node.__data__.metroColor; })
+
+        svgNodeNameBackgrounds
+            .enter()
+            .append("rect")
+            .classed("node-name-background", true)
+            .attr("width", 0)
+            .attr("height", 0)
+            .attr("x", function (node) { return node.__data__.coord.x * self._gridSize - node.getBBox().width / 2; })
+            .attr("y", function (node) { return (node.__data__.coord.y - 1.4) * self._gridSize - node.getBBox().height; })
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("x", function (node) { return node.__data__.coord.x * self._gridSize - node.getBBox().width / 2 - 3; })
+            .attr("y", function (node) { return (node.__data__.coord.y - 0.4) * self._gridSize - node.getBBox().height + 1; })
+            .attr("width", function (node) { return node.getBBox().width + 6; })
+            .attr("height", function (node) { return node.getBBox().height + 2; })
+            .attr("stroke", function (node) { return node.__data__.metroColor; })
+
+
     }
 
     renderPath(startNode, endNode) {
@@ -498,6 +535,7 @@ class Renderer {
         let rawPaths = findPath(startNode, endNode)
         let paths = [];
 
+        // neighbor의 cost로 바꾸어야함
         for (let i = 0; i < rawPaths.length; i++) {
             for (let jam = 0; jam < rawPaths[i].jam; jam++) {
                 paths.push(rawPaths[i]);
@@ -613,12 +651,21 @@ class Renderer {
         }
 
         let svgPathNotInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !rawPaths.includes(neighborsOfNode[0]) || !rawPaths.includes(neighborsOfNode[1]) });
+        let svgPathInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return rawPaths.includes(neighborsOfNode[0]) && rawPaths.includes(neighborsOfNode[1]) });
         let svgNodeNotInPath = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !rawPaths.includes(node) });
         let svgNameNotInPath = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !rawPaths.includes(node) });
 
         svgPathNotInPath.classed("fade-out", true).classed("fade-in", false);
         svgNodeNotInPath.classed("fade-out", true).classed("fade-in", false);
         svgNameNotInPath.classed("fade-out", true).classed("fade-in", false);
+
+        svgPathInPath.attr("stroke", function (neighborsOfNode) {
+            let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
+            let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
+
+            // neighbor.cost 에 따라 색 결정
+            return node.metroColor;
+        });
     }
 
     disablePath() {
@@ -639,6 +686,7 @@ function render(nodes) {
     renderer.renderGrid(100, 70);
     renderer.renderMetroLines();
     renderer.renderMetroNodes();
+    renderer.renderMetroNames();
 }
 
 function renderPath(startNode, endNode) {
