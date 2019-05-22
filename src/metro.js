@@ -471,6 +471,7 @@ class Renderer {
         svgNodeNames
             .transition()
             .duration(500)
+            .text(function (node) { return node.name; })
             .attr("x", function (node) { return node.coord.x * self._gridSize; })
             .attr("y", function (node) { return (node.coord.y - 0.4) * self._gridSize; })
             .attr("fill", function (node) { return node.metroColor; })
@@ -493,6 +494,7 @@ class Renderer {
     }
 
     renderPath(startNode, endNode) {
+        let self = this;
         let rawPaths = findPath(startNode, endNode)
         let paths = [];
 
@@ -502,11 +504,11 @@ class Renderer {
             }
         }
 
-        let self = this;
-
         let svgJams = this._svgLineJamGroup
             .selectAll("path")
             .data(paths)
+
+        svgJams.exit().remove()
 
         svgJams
             .attr("d", function (node) {
@@ -549,10 +551,6 @@ class Renderer {
                     .attrTween("stroke-dasharray", tweenDash)
                     .on("start", repeat);
             })
-
-        svgJams
-            .exit()
-            .remove()
 
         svgJams
             .enter()
@@ -614,13 +612,23 @@ class Renderer {
             };
         }
 
-        function tweenDashReverse() {
-            let l = this.getTotalLength(),
-                i = d3.interpolateString(l + "," + l, "0," + l);
-            return function (t) {
-                return i(t);
-            };
-        }
+        let svgPathNotInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !rawPaths.includes(neighborsOfNode[0]) || !rawPaths.includes(neighborsOfNode[1]) });
+        let svgNodeNotInPath = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !rawPaths.includes(node) });
+        let svgNameNotInPath = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !rawPaths.includes(node) });
+
+        svgPathNotInPath.classed("fade-out", true).classed("fade-in", false);
+        svgNodeNotInPath.classed("fade-out", true).classed("fade-in", false);
+        svgNameNotInPath.classed("fade-out", true).classed("fade-in", false);
+    }
+
+    disablePath() {
+        this._svgLineJamGroup
+            .selectAll("path")
+            .remove()
+
+        this._svgLineGroup.selectAll("path").classed("fade-out", false).classed("fade-in", true);
+        this._svgNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
+        this._svgNodeNameGroup.selectAll("text").classed("fade-out", false).classed("fade-in", true);
     }
 }
 
