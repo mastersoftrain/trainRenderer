@@ -328,6 +328,18 @@ class Renderer {
 
         svgLines
             .exit()
+            .style("opacity", 1)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("d", function (neighborsOfNode) {
+                let lineCoords = JSON.parse(JSON.stringify([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]));
+                for (let i = 0; i < lineCoords.length; i++) {
+                    lineCoords[i].y = lineCoords[i].y + 1;
+                }
+                return self._lineGenerator(lineCoords);
+            })
+            .style("opacity", 0)
             .remove();
 
         svgLines
@@ -364,6 +376,13 @@ class Renderer {
 
         svgNodes
             .exit()
+            .style("opacity", 1)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return (node.coord.y + 1) * self._gridSize; })
+            .style("opacity", 0)
             .remove();
 
         svgNodes
@@ -390,7 +409,16 @@ class Renderer {
             .selectAll("circle")
             .data(this._nodes)
 
-        svgInsideNodes.exit().remove();
+        svgInsideNodes
+            .exit()
+            .style("opacity", 0)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return (node.coord.y + 1) * self._gridSize; })
+            .style("opacity", 1)
+            .remove();
 
         svgInsideNodes
             .classed("node-inside", true)
@@ -471,7 +499,16 @@ class Renderer {
             .selectAll("text")
             .data(this._nodes)
 
-        svgNodeNames.exit().remove();
+        svgNodeNames
+            .exit()
+            .style("opacity", 1)
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("x", function (node) { return node.coord.x * self._gridSize; })
+            .attr("y", function (node) { return (node.coord.y + 1.4) * self._gridSize; })
+            .style("opacity", 0)
+            .remove();
 
         svgNodeNames
             .transition()
@@ -501,7 +538,14 @@ class Renderer {
             .selectAll("rect")
             .data(this._svgNodeNameGroup.selectAll("text").nodes())
 
-        svgNodeNameBackgrounds.exit().remove();
+        svgNodeNameBackgrounds
+            .exit()
+            .transition()
+            .duration(500)
+            .delay(function (d, i) { return 3 * i })
+            .attr("x", function (node) { return node.__data__.coord.x * self._gridSize - node.getBBox().width / 2 - 3; })
+            .attr("y", function (node) { return (node.__data__.coord.y - 0.4) * self._gridSize - node.getBBox().height + 1; })
+            .remove();
 
         svgNodeNameBackgrounds
             .transition()
