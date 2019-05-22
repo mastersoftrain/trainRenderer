@@ -19,7 +19,7 @@ class Random {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    static range(min, max){
+    static range(min, max) {
         return Math.random() * (max - min) + min;
     }
 }
@@ -45,7 +45,7 @@ class Node {
         this._pathCoord = pathCoord;
         this._id = id;
         this._metroLine = metroLine;
-        this._jam;
+        this._jam = Random.rangeInt(0, 30);
         this._neighbors = [];
         this._gScore = 0;
         this._hScore = 0;
@@ -174,6 +174,7 @@ class Renderer {
         this._svgNodeGroup = this._svgContainer.append("g");
         this._svgInsideNodeGroup = this._svgContainer.append("g");
         this._svgNodeNameGroup = this._svgContainer.append("g");
+        this._svgLineJamGroup = this._svgContainer.append("g");
         this._svgCoordSelectorGroup
             .append("rect")
             .attr("x", 0)
@@ -438,12 +439,8 @@ class Renderer {
                     self._isEditMode = false;
                 } else {
                     d3.select(this)
-                        .attr("cx", function (node) {
-                            return node.pathCoord.x * self._gridSize;
-                        })
-                        .attr("cy", function (node) {
-                            return node.pathCoord.y * self._gridSize;
-                        })
+                        .attr("cx", function (node) { return node.pathCoord.x * self._gridSize; })
+                        .attr("cy", function (node) { return node.pathCoord.y * self._gridSize; })
                         .classed("node-inside", false)
                         .classed("node-select", true)
 
@@ -495,152 +492,136 @@ class Renderer {
             .style("opacity", 1)
     }
 
-    renderMetroJams() {
+    renderPath(startNode, endNode) {
+        let rawPaths = findPath(startNode, endNode)
+        let paths = [];
 
+        for (let i = 0; i < rawPaths.length; i++) {
+            for (let jam = 0; jam < rawPaths[i].jam; jam++) {
+                paths.push(rawPaths[i]);
+            }
+        }
+
+        let self = this;
+
+        let svgJams = this._svgLineJamGroup
+            .selectAll("path")
+            .data(paths)
+
+        svgJams
+            .attr("d", function (node) {
+                if (!node.parent)
+                    return;
+                let lineData = [];
+                let startNode = node.parent;
+                let startCoord = startNode.coord;
+                let endCoord = node.coord;
+
+                let noiseAmount = 10;
+                for (let i = noiseAmount; i >= 0; i--) {
+                    let newCoord = {};
+                    let theta = i / noiseAmount;
+                    newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
+                    newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
+
+                    if (i != 0 && i != noiseAmount) {
+                        newCoord.x += Random.range(-0.3, 0.3);
+                        newCoord.y += Random.range(-0.3, 0.3);
+                    }
+                    lineData.push(newCoord);
+                }
+
+                return self._lineGenerator(lineData);
+            })
+            .attr("stroke-width", 0.6)
+            .attr("stroke", function (node) { return node.metroColor; })
+            .attr("fill", "none")
+            .style("stroke-opacity", 0.9)
+            .transition()
+            .ease(d3.easePolyIn)
+            .duration(0)
+            .attrTween("stroke-dashoffset", tweenDashOffset)
+            .attrTween("stroke-dasharray", tweenDash)
+            .on("start", function repeat() {
+                d3.active(this)
+                    .transition()
+                    .duration(Random.rangeInt(750, 3000))
+                    .attrTween("stroke-dasharray", tweenDash)
+                    .on("start", repeat);
+            })
+
+        svgJams
+            .exit()
+            .remove()
+
+        svgJams
+            .enter()
+            .append("path")
+            .attr("d", function (node) {
+                if (!node.parent)
+                    return;
+                let lineData = [];
+                let startNode = node.parent;
+                let startCoord = startNode.coord;
+                let endCoord = node.coord;
+
+                let noiseAmount = 10;
+                for (let i = noiseAmount; i >= 0; i--) {
+                    let newCoord = {};
+                    let theta = i / noiseAmount;
+                    newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
+                    newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
+
+                    if (i != 0 && i != noiseAmount) {
+                        newCoord.x += Random.range(-0.3, 0.3);
+                        newCoord.y += Random.range(-0.3, 0.3);
+                    }
+                    lineData.push(newCoord);
+                }
+
+                return self._lineGenerator(lineData);
+            })
+            .attr("stroke-width", 0.6)
+            .attr("stroke", function (node) { return node.metroColor; })
+            .attr("fill", "none")
+            .style("stroke-opacity", 0.9)
+            .transition()
+            .ease(d3.easePolyIn)
+            .duration(0)
+            .attrTween("stroke-dashoffset", tweenDashOffset)
+            .attrTween("stroke-dasharray", tweenDash)
+            .on("start", function repeat() {
+                d3.active(this)
+                    .transition()
+                    .duration(Random.rangeInt(750, 3000))
+                    .attrTween("stroke-dasharray", tweenDash)
+                    .on("start", repeat);
+            })
+
+        function tweenDash() {
+            let l = this.getTotalLength(),
+                i = d3.interpolateString("0," + l, l + "," + l);
+            return function (t) {
+                return i(t);
+            };
+        }
+
+        function tweenDashOffset() {
+            let l = this.getTotalLength(),
+                i = d3.interpolateString(0, l);
+            return function (t) {
+                return i(t);
+            };
+        }
+
+        function tweenDashReverse() {
+            let l = this.getTotalLength(),
+                i = d3.interpolateString(l + "," + l, "0," + l);
+            return function (t) {
+                return i(t);
+            };
+        }
     }
-
-    // render(nodes) {
-    //     let lineJamAttributes = svgLines
-    //         .append("path")
-    //         .attr("d", function (neighborsOfNode) {
-    //             let lineData = [];
-    //             let startNode = neighborsOfNode[0];
-    //             let startCoord = startNode.coord;
-    //             let endCoord = neighborsOfNode[1].coord;
-
-    //             let noiseAmount = 10;
-    //             for (let i = noiseAmount; i >= 0; i--) {
-    //                 let newCoord = {};
-    //                 let theta = i / noiseAmount;
-    //                 newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
-    //                 newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
-
-    //                 if (i != 0 && i != noiseAmount) {
-    //                     newCoord.x += Random.range(-0.3, 0.3);
-    //                     newCoord.y += Random.range(-0.3, 0.3);
-    //                 }
-    //                 lineData.push(newCoord);
-    //             }
-
-    //             return _lineGenerator(lineData);
-    //         })
-    //         .attr("stroke-width", 0.6)
-    //         .attr("stroke", function (neighborsOfNode) {
-    //             return neighborsOfNode[0].metroColor;
-    //         })
-    //         .attr("fill", "none")
-    //         .style("stroke-opacity", 0.9)
-    //         .transition()
-    //         .ease(d3.easePolyIn)
-    //         .duration(0)
-    //         .attrTween("stroke-dashoffset", tweenDashOffset)
-    //         .attrTween("stroke-dasharray", tweenDash)
-    //         .transition()
-    //         .duration(Random.rangeInt(750, 3000))
-    //         .attrTween("stroke-dasharray", tweenDash)
-    //         .remove()
-
-    //     let svgCoordSelector = svgContainer
-    //         .append("rect")
-    //         .attr("x", 0)
-    //         .attr("y", 0)
-    //         .attr("width", 100 * gridSize)
-    //         .attr("height", 70 * gridSize)
-    //         .attr("fill-opacity", "0")
-    //         .on("contextmenu", function (d) {
-    //             if (isEditMode) {
-    //                 let mouseCoord = d3.mouse(this);
-    //                 let gridCoord = {
-    //                     x: Math.round(mouseCoord[0] / gridSize),
-    //                     y: Math.round(mouseCoord[1] / gridSize)
-    //                 }
-
-    //                 let param_xy = {};
-    //                 let currentConfig = selected[selected.length - 1];
-
-    //                 if (selected[selected.length - 1]) {
-    //                     param_xy.column = "coord";
-    //                     param_xy.id = currentConfig.id;
-    //                     param_xy.coord_x = gridCoord.x;
-    //                     param_xy.coord_y = gridCoord.y;
-    //                     axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
-    //                         .then(function (response) {
-    //                             if (response.status === 200) {
-    //                                 currentConfig.coord.x = gridCoord.x;
-    //                                 currentConfig.coord.y = gridCoord.y;
-    //                                 displayConfig(currentConfig);
-    //                                 selected = []
-    //                                 render(selectedAll)
-    //                                 console.log(response);
-    //                             }
-    //                         })
-    //                         .catch(function (error) {
-    //                             console.log(error);
-    //                         });
-    //                 }
-    //             }
-    //             else if (isPathMode) {
-    //                 let mouseCoord = d3.mouse(this);
-    //                 let gridCoord = {
-    //                     x: Math.round(mouseCoord[0] / gridSize),
-    //                     y: Math.round(mouseCoord[1] / gridSize)
-    //                 }
-
-    //                 let param_xy = {};
-    //                 let currentConfig = selected[selected.length - 1];
-
-    //                 if (selected[selected.length - 1]) {
-    //                     param_xy.column = "coord2";
-    //                     param_xy.id = currentConfig.id;
-    //                     param_xy.coord_x = gridCoord.x;
-    //                     param_xy.coord_y = gridCoord.y;
-    //                     axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
-    //                         .then(function (response) {
-    //                             if (response.status === 200) {
-    //                                 currentConfig.pathCoord.x = gridCoord.x;
-    //                                 currentConfig.pathCoord.y = gridCoord.y;
-    //                                 displayConfig(currentConfig);
-    //                                 selected = []
-    //                                 render(selectedAll)
-    //                                 console.log(response);
-    //                             }
-    //                         })
-    //                         .catch(function (error) {
-    //                             console.log(error);
-    //                         });
-    //                 }
-    //             }
-    //             else {
-    //                 isPathMode = false;
-    //                 isEditMode = false;
-    //                 displayConfig(null);
-    //             }
-    //         })
-
-    //     function tweenDash() {
-    //         let l = this.getTotalLength(),
-    //             i = d3.interpolateString("0," + l, l + "," + l);
-    //         return function (t) {
-    //             return i(t);
-    //         };
-    //     }
-
-    //     function tweenDashOffset() {
-    //         let l = this.getTotalLength(),
-    //             i = d3.interpolateString(0, l);
-    //         return function (t) {
-    //             return i(t);
-    //         };
-    //     }
-
-    //     function tweenDashReverse() {
-    //         let l = this.getTotalLength(),
-    //             i = d3.interpolateString(l + "," + l, "0," + l);
-    //         return function (t) {
-    //             return i(t);
-    //         };
-    //     }
-    // }
 }
 
 function render(nodes) {
@@ -650,7 +631,6 @@ function render(nodes) {
     renderer.renderGrid(100, 70);
     renderer.renderMetroLines();
     renderer.renderMetroNodes();
-    renderer.renderMetroJams();
 }
 
 function findPath(startNode, endNode) {
