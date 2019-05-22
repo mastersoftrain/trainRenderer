@@ -15,8 +15,12 @@ class Random {
         return Math.random();
     }
 
-    static range(min, max) {
+    static rangeInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    static range(min, max){
+        return Math.random() * (max - min) + min;
     }
 }
 
@@ -149,30 +153,20 @@ class Renderer {
         this._zoom = d3.zoom().scaleExtent([0.3, 4]).translateExtent([[0, 0], [5000, 3500]]);
         this._lineGenerator = d3
             .line()
-            .x(function (d) {
-                return d.x * self._gridSize;
-            })
-            .y(function (d) {
-                return d.y * self._gridSize;
-            })
+            .x(function (d) { return d.x * self._gridSize; })
+            .y(function (d) { return d.y * self._gridSize; })
             .curve(d3.curveBundle.beta(1));
         this._svgContainer = d3
             .select("#metro")
             .append("svg")
             .attr("width", "100%")
             .attr("height", "100%")
-            .call(this._zoom.transform, d3.zoomIdentity.translate(267.59375, -52).scale(0.3))
-            .call(this._zoom
-                .on("zoom", function () {
-                    self._svgContainer.attr("transform", d3.event.transform)
-                })
-            )
-            .on("contextmenu", function (d) {
-                d3.event.preventDefault();
-            })
+            .call(this._zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.4))
+            .call(this._zoom.on("zoom", function () { self._svgContainer.attr("transform", d3.event.transform) }))
+            .on("contextmenu", function (d) { d3.event.preventDefault(); })
             .append("g")
 
-        this._svgContainer.call(this._zoom.transform, d3.zoomIdentity.translate(267.59375, -52).scale(0.3))
+        this._svgContainer.call(this._zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.4))
 
         this._svgCoordSelectorGroup = this._svgContainer.append("g");
         this._svgGridGroup = this._svgContainer.append("g");
@@ -320,9 +314,7 @@ class Renderer {
         svgGrids
             .enter()
             .append("path")
-            .attr("d", function (grid) {
-                return self._lineGenerator([grid[0], grid[1]]);
-            })
+            .attr("d", function (grid) { return self._lineGenerator([grid[0], grid[1]]); })
             .classed("grid", true)
     }
 
@@ -339,20 +331,14 @@ class Renderer {
         svgLines
             .transition()
             .duration(500)
-            .attr("d", function (neighborsOfNode) {
-                return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
-            })
-            .attr("stroke", function (neighborsOfNode) {
-                return neighborsOfNode[0].metroColor;
-            })
+            .attr("d", function (neighborsOfNode) { return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]); })
+            .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
 
         svgLines
             .enter()
             .append("path")
             .classed("line", true)
-            .attr("stroke", function (neighborsOfNode) {
-                return neighborsOfNode[0].metroColor;
-            })
+            .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
             .attr("d", function (neighborsOfNode) {
                 let lineCoords = JSON.parse(JSON.stringify([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]));
                 for (let i = 0; i < lineCoords.length; i++) {
@@ -364,9 +350,7 @@ class Renderer {
             .transition()
             .duration(500)
             .delay(function (d, i) { return 3 * i })
-            .attr("d", function (neighborsOfNode) {
-                return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]);
-            })
+            .attr("d", function (neighborsOfNode) { return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]); })
             .style("opacity", 1);
     }
 
@@ -383,38 +367,22 @@ class Renderer {
         svgNodes
             .transition()
             .duration(500)
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return node.coord.y * self._gridSize;
-            })
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return node.coord.y * self._gridSize; })
+            .attr("fill", function (node) { return node.metroColor; })
 
         svgNodes
             .enter()
             .append("circle")
             .classed("node", true)
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return (node.coord.y - 1) * self._gridSize;
-            })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return (node.coord.y - 1) * self._gridSize; })
             .transition()
             .duration(500)
             .delay(function (d, i) { return 3 * i })
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return node.coord.y * self._gridSize;
-            })
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return node.coord.y * self._gridSize; })
+            .attr("fill", function (node) { return node.metroColor; })
 
         let svgInsideNodes = this._svgInsideNodeGroup
             .selectAll("circle")
@@ -427,12 +395,8 @@ class Renderer {
             .classed("node-select", false)
             .transition()
             .duration(500)
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return node.coord.y * self._gridSize;
-            })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return node.coord.y * self._gridSize; })
 
         svgInsideNodes
             .enter()
@@ -491,22 +455,14 @@ class Renderer {
                     self._isPathMode = true;
                 }
             })
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return (node.coord.y - 1) * self._gridSize;
-            })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return (node.coord.y - 1) * self._gridSize; })
             .style("opacity", 0)
             .transition()
             .duration(500)
             .delay(function (d, i) { return 3 * i })
-            .attr("cx", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("cy", function (node) {
-                return node.coord.y * self._gridSize;
-            })
+            .attr("cx", function (node) { return node.coord.x * self._gridSize; })
+            .attr("cy", function (node) { return node.coord.y * self._gridSize; })
             .style("opacity", 1)
 
         let svgNodeNames = this._svgNodeNameGroup
@@ -518,42 +474,24 @@ class Renderer {
         svgNodeNames
             .transition()
             .duration(500)
-            .attr("x", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("y", function (node) {
-                return (node.coord.y - 0.4) * self._gridSize;
-            })
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
+            .attr("x", function (node) { return node.coord.x * self._gridSize; })
+            .attr("y", function (node) { return (node.coord.y - 0.4) * self._gridSize; })
+            .attr("fill", function (node) { return node.metroColor; })
 
         svgNodeNames
             .enter()
             .append("text")
             .attr("class", "node-name")
-            .text(function (node) {
-                return node.name;
-            })
-            .attr("fill", function (node) {
-                return node.metroColor;
-            })
-            .attr("x", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("y", function (node) {
-                return (node.coord.y - 1.4) * self._gridSize;
-            })
+            .text(function (node) { return node.name; })
+            .attr("fill", function (node) { return node.metroColor; })
+            .attr("x", function (node) { return node.coord.x * self._gridSize; })
+            .attr("y", function (node) { return (node.coord.y - 1.4) * self._gridSize; })
             .style("opacity", 0)
             .transition()
             .duration(500)
             .delay(function (d, i) { return 3 * i })
-            .attr("x", function (node) {
-                return node.coord.x * self._gridSize;
-            })
-            .attr("y", function (node) {
-                return (node.coord.y - 0.4) * self._gridSize;
-            })
+            .attr("x", function (node) { return node.coord.x * self._gridSize; })
+            .attr("y", function (node) { return (node.coord.y - 0.4) * self._gridSize; })
             .style("opacity", 1)
     }
 
@@ -756,7 +694,7 @@ function findPath(startNode, endNode) {
 
         for (let i = 0; i < neighbors.length; i++) {
             let neighborNode = neighbors[i].node;
-            let neighborcost = neighbors[i].cost;
+            let neighborcost = neighbors[i].cost * 10;
 
             if (closeList.includes(neighborNode))
                 continue;
