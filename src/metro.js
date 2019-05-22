@@ -170,11 +170,11 @@ class Renderer {
 
         this._svgCoordSelectorGroup = this._svgContainer.append("g");
         this._svgGridGroup = this._svgContainer.append("g");
+        this._svgLineJamGroup = this._svgContainer.append("g");
         this._svgLineGroup = this._svgContainer.append("g");
         this._svgNodeGroup = this._svgContainer.append("g");
         this._svgInsideNodeGroup = this._svgContainer.append("g");
         this._svgNodeNameGroup = this._svgContainer.append("g");
-        this._svgLineJamGroup = this._svgContainer.append("g");
         this._svgCoordSelectorGroup
             .append("rect")
             .attr("x", 0)
@@ -571,8 +571,8 @@ class Renderer {
                     newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
 
                     if (i != 0 && i != noiseAmount) {
-                        newCoord.x += Random.range(-0.3, 0.3);
-                        newCoord.y += Random.range(-0.3, 0.3);
+                        newCoord.x += Random.range(-0.2, 0.2);
+                        newCoord.y += Random.range(-0.2, 0.2);
                     }
                     lineData.push(newCoord);
                 }
@@ -641,13 +641,13 @@ function render(nodes) {
     renderer.renderMetroNodes();
 }
 
-function renderPath(startNode, endNode){
+function renderPath(startNode, endNode) {
     let renderer = new Renderer();
 
     renderer.renderPath(startNode, endNode);
 }
 
-function disablePath(){
+function disablePath() {
     let renderer = new Renderer();
 
     renderer.disablePath();
