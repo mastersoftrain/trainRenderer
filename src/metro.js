@@ -633,12 +633,24 @@ class Renderer {
 }
 
 function render(nodes) {
-    renderer = new Renderer();
+    let renderer = new Renderer();
 
     renderer.nodes = nodes;
     renderer.renderGrid(100, 70);
     renderer.renderMetroLines();
     renderer.renderMetroNodes();
+}
+
+function renderPath(startNode, endNode){
+    let renderer = new Renderer();
+
+    renderer.renderPath(startNode, endNode);
+}
+
+function disablePath(){
+    let renderer = new Renderer();
+
+    renderer.disablePath();
 }
 
 function findPath(startNode, endNode) {
