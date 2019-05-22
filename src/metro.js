@@ -174,7 +174,7 @@ class Renderer {
         this._svgLineGroup = this._svgContainer.append("g");
         this._svgNodeGroup = this._svgContainer.append("g");
         this._svgInsideNodeGroup = this._svgContainer.append("g");
-        this._svgNodeNmaeBackgroundGroup = this._svgContainer.append("g");
+        this._svgNodeNameBackgroundGroup = this._svgContainer.append("g");
         this._svgNodeNameGroup = this._svgContainer.append("g");
         this._svgCoordSelectorGroup
             .append("rect")
@@ -534,9 +534,9 @@ class Renderer {
             .attr("y", function (node) { return (node.coord.y - 0.4) * self._gridSize; })
             .style("opacity", 1)
 
-        let svgNodeNameBackgrounds = this._svgNodeNmaeBackgroundGroup
+        let svgNodeNameBackgrounds = self._svgNodeNameBackgroundGroup
             .selectAll("rect")
-            .data(this._svgNodeNameGroup.selectAll("text").nodes())
+            .data(self._svgNodeNameGroup.selectAll("text").nodes())
 
         svgNodeNameBackgrounds
             .exit()
@@ -544,7 +544,7 @@ class Renderer {
             .duration(500)
             .delay(function (d, i) { return 3 * i })
             .attr("x", function (node) { return node.__data__.coord.x * self._gridSize - node.getBBox().width / 2 - 3; })
-            .attr("y", function (node) { return (node.__data__.coord.y - 0.4) * self._gridSize - node.getBBox().height + 1; })
+            .attr("y", function (node) { return (node.__data__.coord.y + 1.4) * self._gridSize - node.getBBox().height + 1; })
             .remove();
 
         svgNodeNameBackgrounds
@@ -552,6 +552,8 @@ class Renderer {
             .duration(500)
             .attr("x", function (node) { return node.__data__.coord.x * self._gridSize - node.getBBox().width / 2 - 3; })
             .attr("y", function (node) { return (node.__data__.coord.y - 0.4) * self._gridSize - node.getBBox().height + 1; })
+            .attr("width", function (node) { return node.getBBox().width + 6; })
+            .attr("height", function (node) { return node.getBBox().height + 2; })
             .attr("stroke", function (node) { return node.__data__.metroColor; })
 
         svgNodeNameBackgrounds
@@ -570,8 +572,6 @@ class Renderer {
             .attr("width", function (node) { return node.getBBox().width + 6; })
             .attr("height", function (node) { return node.getBBox().height + 2; })
             .attr("stroke", function (node) { return node.__data__.metroColor; })
-
-
     }
 
     renderPath(startNode, endNode) {
