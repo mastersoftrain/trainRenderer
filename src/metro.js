@@ -596,25 +596,38 @@ class Renderer {
             .attr("d", function (node) {
                 if (!node.parent)
                     return;
-                let lineData = [];
-                let startNode = node.parent;
-                let startCoord = startNode.coord;
-                let endCoord = node.coord;
 
-                let noiseAmount = 10;
-                for (let i = noiseAmount; i >= 0; i--) {
-                    let newCoord = {};
-                    let theta = i / noiseAmount;
-                    newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
-                    newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
-
-                    if (i != 0 && i != noiseAmount) {
-                        newCoord.x += Random.range(-0.3, 0.3);
-                        newCoord.y += Random.range(-0.3, 0.3);
+                let reversePath;
+                let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
+                    if ((d[0] === node.parent && d[1] === node)) {
+                        reversePath = false;
+                        return true;
                     }
-                    lineData.push(newCoord);
-                }
+                    else if (d[1] === node.parent && d[0] === node) {
+                        reversePath = true;
+                        return true;
+                    }
+                    else return false;
+                }).nodes()[0]
 
+                if (!originalLine)
+                    return;
+
+                let distance = Math.hypot(node.coord.x - node.parent.coord.x, node.coord.y - node.parent.coord.y);
+                let noiseAmount = distance * 2;
+
+                let lineLength = originalLine.getTotalLength();
+                let interval = lineLength / (noiseAmount - 1);
+                let lineData = d3.range(noiseAmount).map(function (d) {
+                    let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d) * interval : d * interval);
+                    point.x = Math.round(point.x / self._gridSize)
+                    point.y = Math.round(point.y / self._gridSize)
+                    if (!(d == 0 || d == noiseAmount - 1)) {
+                        point.x += Random.range(-0.3, 0.3);
+                        point.y += Random.range(-0.3, 0.3);
+                    }
+                    return point;
+                });;
                 return self._lineGenerator(lineData);
             })
             .attr("stroke-width", 0.6)
@@ -640,25 +653,38 @@ class Renderer {
             .attr("d", function (node) {
                 if (!node.parent)
                     return;
-                let lineData = [];
-                let startNode = node.parent;
-                let startCoord = startNode.coord;
-                let endCoord = node.coord;
 
-                let noiseAmount = 10;
-                for (let i = noiseAmount; i >= 0; i--) {
-                    let newCoord = {};
-                    let theta = i / noiseAmount;
-                    newCoord.x = theta * startCoord.x + (1 - theta) * endCoord.x;
-                    newCoord.y = theta * startCoord.y + (1 - theta) * endCoord.y;
-
-                    if (i != 0 && i != noiseAmount) {
-                        newCoord.x += Random.range(-0.2, 0.2);
-                        newCoord.y += Random.range(-0.2, 0.2);
+                let reversePath;
+                let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
+                    if ((d[0] === node.parent && d[1] === node)) {
+                        reversePath = false;
+                        return true;
                     }
-                    lineData.push(newCoord);
-                }
+                    else if (d[1] === node.parent && d[0] === node) {
+                        reversePath = true;
+                        return true;
+                    }
+                    else return false;
+                }).nodes()[0]
 
+                if (!originalLine)
+                    return;
+
+                let distance = Math.hypot(node.coord.x - node.parent.coord.x, node.coord.y - node.parent.coord.y);
+                let noiseAmount = distance * 2;
+
+                let lineLength = originalLine.getTotalLength();
+                let interval = lineLength / (noiseAmount - 1);
+                let lineData = d3.range(noiseAmount).map(function (d) {
+                    let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d - 1) * interval : d * interval);
+                    point.x = Math.round(point.x / self._gridSize)
+                    point.y = Math.round(point.y / self._gridSize)
+                    if (!(d == 0 || d == noiseAmount - 1)) {
+                        point.x += Random.range(-0.3, 0.3);
+                        point.y += Random.range(-0.3, 0.3);
+                    }
+                    return point;
+                });;
                 return self._lineGenerator(lineData);
             })
             .attr("stroke-width", 0.6)
