@@ -156,6 +156,9 @@ class Renderer {
             .x(function (d) { return d.x * self._gridSize; })
             .y(function (d) { return d.y * self._gridSize; })
             .curve(d3.curveBundle.beta(1));
+        this._congestionColors = d3.scaleLinear()
+            .range(["#247BA0", "#70C1B3", "#B2DBBF", "#F3FFBD", "#FF1654"])
+            .domain([0.0, 0.1, 0.2, 0.4, 1.0])
         this._svgContainer = d3
             .select("#metro")
             .append("svg")
@@ -721,7 +724,7 @@ class Renderer {
         }
 
         let svgPathNotInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !rawPaths.includes(neighborsOfNode[0]) || !rawPaths.includes(neighborsOfNode[1]) });
-        let svgPathInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return rawPaths.includes(neighborsOfNode[0]) && rawPaths.includes(neighborsOfNode[1]) });
+        //let svgPathInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return rawPaths.includes(neighborsOfNode[0]) && rawPaths.includes(neighborsOfNode[1]) });
         let svgNodeNotInPath = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !rawPaths.includes(node) });
         let svgNameNotInPath = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !rawPaths.includes(node) });
 
@@ -729,13 +732,13 @@ class Renderer {
         svgNodeNotInPath.classed("fade-out", true).classed("fade-in", false);
         svgNameNotInPath.classed("fade-out", true).classed("fade-in", false);
 
-        svgPathInPath.attr("stroke", function (neighborsOfNode) {
-            let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
-            let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
+        // svgPathInPath.attr("stroke", function (neighborsOfNode) {
+        //     let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
+        //     let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
 
-            // neighbor.cost 에 따라 색 결정
-            return node.metroColor;
-        });
+        //     const congestion = neighbor.congestion;
+        //     return self._congestionColors(congestion);
+        // });
     }
 
     disablePath() {
@@ -747,6 +750,31 @@ class Renderer {
         this._svgNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
         this._svgNodeNameGroup.selectAll("text").classed("fade-out", false).classed("fade-in", true);
     }
+
+    renderCongestion() {
+        let self = this;
+
+        this._svgLineGroup
+            .selectAll("path")
+            .transition()
+            .duration(500)
+            .attr("stroke", function (neighborsOfNode) {
+                let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
+                let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
+                const congestion = neighbor.congestion;
+                return self._congestionColors(congestion);
+            });
+    }
+
+    disableCongestion() {
+        let self = this;
+
+        this._svgLineGroup
+            .selectAll("path")
+            .transition()
+            .duration(500)
+            .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
+    }
 }
 
 function render(nodes) {
@@ -757,6 +785,16 @@ function render(nodes) {
     renderer.renderMetroLines();
     renderer.renderMetroNodes();
     renderer.renderMetroNames();
+}
+
+function renderCongestion() {
+    let renderer = new Renderer();
+    renderer.renderCongestion();
+}
+
+function disableCongestion() {
+    let renderer = new Renderer();
+    renderer.disableCongestion();
 }
 
 function renderPath(startNode, endNode) {
