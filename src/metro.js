@@ -179,6 +179,7 @@ class Renderer {
         this._svgInsideNodeGroup = this._svgContainer.append("g");
         this._svgNodeNameBackgroundGroup = this._svgContainer.append("g");
         this._svgNodeNameGroup = this._svgContainer.append("g");
+        this._svgLineOverGroup = this._svgContainer.append("g");
         this._svgCoordSelectorGroup
             .append("rect")
             .attr("x", 0)
@@ -368,7 +369,7 @@ class Renderer {
             .duration(500)
             .delay(function (d, i) { return 3 * i })
             .attr("d", function (neighborsOfNode) { return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]); })
-            .style("opacity", 1);
+            .style("opacity", 1)
     }
 
     renderMetroNodes() {
@@ -723,21 +724,36 @@ class Renderer {
             };
         }
 
-        let svgPathNotInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !rawPaths.includes(neighborsOfNode[0]) || !rawPaths.includes(neighborsOfNode[1]) });
-        //let svgPathInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return rawPaths.includes(neighborsOfNode[0]) && rawPaths.includes(neighborsOfNode[1]) });
-        let svgNodeNotInPath = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !rawPaths.includes(node) });
-        let svgNameNotInPath = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !rawPaths.includes(node) });
+        focusNodes(rawPaths);
 
-        svgPathNotInPath.classed("fade-out", true).classed("fade-in", false);
-        svgNodeNotInPath.classed("fade-out", true).classed("fade-in", false);
-        svgNameNotInPath.classed("fade-out", true).classed("fade-in", false);
+        // let svgPathNotInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !rawPaths.includes(neighborsOfNode[0]) || !rawPaths.includes(neighborsOfNode[1]) });
+        // //let svgPathInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return rawPaths.includes(neighborsOfNode[0]) && rawPaths.includes(neighborsOfNode[1]) });
+        // let svgNodeNotInPath = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !rawPaths.includes(node) });
+        // let svgNameNotInPath = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !rawPaths.includes(node) });
+
+        // svgPathNotInPath.classed("fade-out", true).classed("fade-in", false);
+        // svgNodeNotInPath.classed("fade-out", true).classed("fade-in", false);
+        // svgNameNotInPath.classed("fade-out", true).classed("fade-in", false);
+
+        // let congestionDomain = [0, 1.0];
+        // svgPathInPath.nodes().forEach(n => {
+        //     let startNode = n.__data__[0];
+        //     let endNode = n.__data__[1];
+
+        //     let neighbor = startNode.neighbors.find(neighbor => { return neighbor.node === endNode; })
+        //     congestionDomain.push(neighbor.congestion);
+        // })
+        // congestionDomain.sort();
+
+        // let congestionColors = d3.scaleLinear()
+        //     .range(["#247BA0", "#70C1B3", "#B2DBBF", "#F3FFBD", "#FF1654"])
+        //     .domain(congestionDomain)
 
         // svgPathInPath.attr("stroke", function (neighborsOfNode) {
         //     let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
         //     let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
-
         //     const congestion = neighbor.congestion;
-        //     return self._congestionColors(congestion);
+        //     return congestionColors(congestion);
         // });
     }
 
@@ -745,10 +761,7 @@ class Renderer {
         this._svgLineJamGroup
             .selectAll("path")
             .remove()
-
-        this._svgLineGroup.selectAll("path").classed("fade-out", false).classed("fade-in", true);
-        this._svgNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
-        this._svgNodeNameGroup.selectAll("text").classed("fade-out", false).classed("fade-in", true);
+        disableFocus();
     }
 
     renderCongestion() {
@@ -775,6 +788,22 @@ class Renderer {
             .duration(500)
             .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
     }
+
+    focusNodes(nodes) {
+        let svgPathNotInNodes = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !nodes.includes(neighborsOfNode[0]) || !nodes.includes(neighborsOfNode[1]) });
+        let svgNodeNotInNodes = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !nodes.includes(node) });
+        let svgNameNotInNodes = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !nodes.includes(node) });
+
+        svgPathNotInNodes.classed("fade-out", true).classed("fade-in", false);
+        svgNodeNotInNodes.classed("fade-out", true).classed("fade-in", false);
+        svgNameNotInNodes.classed("fade-out", true).classed("fade-in", false);
+    }
+
+    disableFocus() {
+        this._svgLineGroup.selectAll("path").classed("fade-out", false).classed("fade-in", true);
+        this._svgNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
+        this._svgNodeNameGroup.selectAll("text").classed("fade-out", false).classed("fade-in", true);
+    }
 }
 
 function render(nodes) {
@@ -785,6 +814,16 @@ function render(nodes) {
     renderer.renderMetroLines();
     renderer.renderMetroNodes();
     renderer.renderMetroNames();
+}
+
+function focusNodes(nodes) {
+    let renderer = new Renderer();
+    renderer.focusNodes(nodes);
+}
+
+function disableFocus() {
+    let renderer = new Renderer();
+    renderer.disableFocus();
 }
 
 function renderCongestion() {
