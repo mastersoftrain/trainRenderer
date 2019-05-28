@@ -12,15 +12,15 @@ const MetroColors = Object.freeze({
 
 class Random {
     static generate() {
-        return Math.random();
+        return d3.randomUniform()();
     }
 
     static rangeInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        return Math.floor(d3.randomUniform(min, max)());
     }
 
     static range(min, max) {
-        return Math.random() * (max - min) + min;
+        return d3.randomUniform(min, max)();
     }
 }
 
@@ -45,7 +45,6 @@ class Node {
         this._pathCoord = pathCoord;
         this._id = id;
         this._metroLine = metroLine;
-        this._jam = Random.rangeInt(0, 30);
         this._neighbors = [];
         this._gScore = 0;
         this._hScore = 0;
@@ -91,14 +90,6 @@ class Node {
 
     get metroColor() {
         return MetroColors[this._metroLine];
-    }
-
-    get jam() {
-        return this._jam;
-    }
-
-    set jam(newJam) {
-        this._jam = newJam;
     }
 
     get neighbors() {
@@ -583,10 +574,14 @@ class Renderer {
         let rawPaths = findPath(startNode, endNode)
         let paths = [];
 
-        // neighbor의 cost로 바꾸어야함
-        for (let i = 0; i < rawPaths.length; i++) {
-            for (let jam = 0; jam < rawPaths[i].jam; jam++) {
-                paths.push(rawPaths[i]);
+        for (let i = 1; i < rawPaths.length; i++) {
+            let previousNode = rawPaths[i - 1];
+            let currentNode = rawPaths[i];
+
+            let neighbor = currentNode.neighbors.find(n => { return n.node === previousNode; })
+            let congestionMultiplier = 100;
+            for (let congestion = 0; congestion < neighbor.congestion * congestionMultiplier; congestion++) {
+                paths.push(currentNode);
             }
         }
 
@@ -618,7 +613,7 @@ class Renderer {
                     return;
 
                 let distance = Math.hypot(node.coord.x - node.parent.coord.x, node.coord.y - node.parent.coord.y);
-                let noiseAmount = distance * 2;
+                let noiseAmount = distance * 3;
 
                 let lineLength = originalLine.getTotalLength();
                 let interval = lineLength / (noiseAmount - 1);
@@ -626,29 +621,35 @@ class Renderer {
                     let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d) * interval : d * interval);
                     point.x = Math.round(point.x / self._gridSize)
                     point.y = Math.round(point.y / self._gridSize)
-                    if (!(d == 0 || d == noiseAmount - 1)) {
-                        point.x += Random.range(-0.3, 0.3);
-                        point.y += Random.range(-0.3, 0.3);
-                    }
+                    if (d == 0 || d == noiseAmount - 1)
+                        return point;
+
+                    point.x += Random.range(-0.3, 0.3);
+                    point.y += Random.range(-0.3, 0.3);
                     return point;
                 });;
                 return self._lineGenerator(lineData);
             })
-            .attr("stroke-width", 0.6)
-            .attr("stroke", function (node) { return node.metroColor; })
+            .attr("stroke-width", 0.8)
+            .attr("stroke", function (node) {
+                let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === node.parent })
+                const congestion = neighbor.congestion;
+                return self._congestionColors(congestion);
+            })
             .attr("fill", "none")
-            .style("stroke-opacity", 0.9)
+            //.style("stroke-opacity", 0.9)
             .transition()
             .ease(d3.easePolyIn)
             .duration(0)
             .attrTween("stroke-dashoffset", tweenDashOffset)
             .attrTween("stroke-dasharray", tweenDash)
-            .on("start", function repeat() {
+            .on("end", function repeat() {
                 d3.active(this)
                     .transition()
                     .duration(Random.rangeInt(750, 3000))
+                    .delay(Random.range(0, 5))
                     .attrTween("stroke-dasharray", tweenDash)
-                    .on("start", repeat);
+                    .on("end", repeat);
             })
 
         svgJams
@@ -675,37 +676,43 @@ class Renderer {
                     return;
 
                 let distance = Math.hypot(node.coord.x - node.parent.coord.x, node.coord.y - node.parent.coord.y);
-                let noiseAmount = distance * 2;
+                let noiseAmount = distance * 3;
 
                 let lineLength = originalLine.getTotalLength();
                 let interval = lineLength / (noiseAmount - 1);
                 let lineData = d3.range(noiseAmount).map(function (d) {
-                    let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d - 1) * interval : d * interval);
+                    let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d) * interval : d * interval);
                     point.x = Math.round(point.x / self._gridSize)
                     point.y = Math.round(point.y / self._gridSize)
-                    if (!(d == 0 || d == noiseAmount - 1)) {
-                        point.x += Random.range(-0.3, 0.3);
-                        point.y += Random.range(-0.3, 0.3);
-                    }
+                    if (d == 0 || d == noiseAmount - 1)
+                        return point;
+
+                    point.x += Random.range(-0.3, 0.3);
+                    point.y += Random.range(-0.3, 0.3);
                     return point;
                 });;
                 return self._lineGenerator(lineData);
             })
-            .attr("stroke-width", 0.6)
-            .attr("stroke", function (node) { return node.metroColor; })
+            .attr("stroke-width", 0.8)
+            .attr("stroke", function (node) {
+                let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === node.parent })
+                const congestion = neighbor.congestion;
+                return self._congestionColors(congestion);
+            })
             .attr("fill", "none")
-            .style("stroke-opacity", 0.9)
+            //.style("stroke-opacity", 0.9)
             .transition()
             .ease(d3.easePolyIn)
             .duration(0)
             .attrTween("stroke-dashoffset", tweenDashOffset)
             .attrTween("stroke-dasharray", tweenDash)
-            .on("start", function repeat() {
+            .on("end", function repeat() {
                 d3.active(this)
                     .transition()
                     .duration(Random.rangeInt(750, 3000))
+                    .delay(Random.range(0, 5))
                     .attrTween("stroke-dasharray", tweenDash)
-                    .on("start", repeat);
+                    .on("end", repeat);
             })
 
         function tweenDash() {
