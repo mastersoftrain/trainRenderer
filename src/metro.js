@@ -210,7 +210,10 @@ class Renderer {
                 if (!this._nodes.find(node => node === newNodes[i].neighbors[j].node))
                     continue;
 
-                this._neighborsOfNodes.push([newNodes[i], newNodes[i].neighbors[j].node]);
+                this._neighborsOfNodes.push({
+                    "pair": [newNodes[i], newNodes[i].neighbors[j].node],
+                    "congestion": newNodes[i].neighbors[j].congestion
+                });
             }
         }
     }
@@ -267,8 +270,8 @@ class Renderer {
             .transition()
             .duration(500)
             .delay(function (d, i) { return 3 * i })
-            .attr("d", function (neighborsOfNode) {
-                let lineCoords = JSON.parse(JSON.stringify([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]));
+            .attr("d", function (neighbor) {
+                let lineCoords = JSON.parse(JSON.stringify([neighbor.pair[0].coord, neighbor.pair[0].pathCoord, neighbor.pair[1].coord]));
                 for (let i = 0; i < lineCoords.length; i++) {
                     lineCoords[i].y = lineCoords[i].y + 1;
                 }
@@ -280,16 +283,16 @@ class Renderer {
         svgLines
             .transition()
             .duration(500)
-            .attr("d", function (neighborsOfNode) { return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]); })
-            .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
+            .attr("d", function (neighbor) { return self._lineGenerator([neighbor.pair[0].coord, neighbor.pair[0].pathCoord, neighbor.pair[1].coord]); })
+            .attr("stroke", function (neighbor) { return neighbor.pair[0].metroColor; })
 
         svgLines
             .enter()
             .append("path")
             .classed("line", true)
-            .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
-            .attr("d", function (neighborsOfNode) {
-                let lineCoords = JSON.parse(JSON.stringify([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]));
+            .attr("stroke", function (neighbor) { return neighbor.pair[0].metroColor; })
+            .attr("d", function (neighbor) {
+                let lineCoords = JSON.parse(JSON.stringify([neighbor.pair[0].coord, neighbor.pair[0].pathCoord, neighbor.pair[1].coord]));
                 for (let i = 0; i < lineCoords.length; i++) {
                     lineCoords[i].y = lineCoords[i].y - 1;
                 }
@@ -299,7 +302,7 @@ class Renderer {
             .transition()
             .duration(500)
             .delay(function (d, i) { return 3 * i })
-            .attr("d", function (neighborsOfNode) { return self._lineGenerator([neighborsOfNode[0].coord, neighborsOfNode[0].pathCoord, neighborsOfNode[1].coord]); })
+            .attr("d", function (neighbor) { return self._lineGenerator([neighbor.pair[0].coord, neighbor.pair[0].pathCoord, neighbor.pair[1].coord]); })
             .style("opacity", 1)
     }
 
@@ -477,7 +480,10 @@ class Renderer {
             let neighbor = currentNode.neighbors.find(n => { return n.node === previousNode; })
             let congestionMultiplier = 100;
             for (let congestion = 0; congestion < neighbor.congestion * congestionMultiplier; congestion++) {
-                paths.push(currentNode);
+                paths.push({
+                    "pair": [previousNode, currentNode],
+                    "congestion": neighbor.congestion
+                });
             }
         }
 
@@ -488,18 +494,15 @@ class Renderer {
         svgJams.exit().remove()
 
         svgJams
-            .attr("d", function (node) {
-                if (!node.parent)
-                    return;
-
+            .attr("d", function (neighbor) {
                 let reversePath;
                 let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
-                    if ((d[0] === node.parent && d[1] === node)) {
-                        reversePath = false;
+                    if ((d.pair[0] === neighbor.pair[0] && d.pair[1] === neighbor.pair[1])) {
+                        reversePath = true;
                         return true;
                     }
-                    else if (d[1] === node.parent && d[0] === node) {
-                        reversePath = true;
+                    else if (d.pair[1] === neighbor.pair[0] && d.pair[0] === neighbor.pair[1]) {
+                        reversePath = false;
                         return true;
                     }
                     else return false;
@@ -508,7 +511,7 @@ class Renderer {
                 if (!originalLine)
                     return;
 
-                let distance = Math.hypot(node.coord.x - node.parent.coord.x, node.coord.y - node.parent.coord.y);
+                let distance = Math.hypot(neighbor.pair[0].coord.x - neighbor.pair[1].coord.x, neighbor.pair[0].coord.y - neighbor.pair[1].coord.y);
                 let noiseAmount = distance * 3;
 
                 let lineLength = originalLine.getTotalLength();
@@ -527,13 +530,8 @@ class Renderer {
                 return self._lineGenerator(lineData);
             })
             .attr("stroke-width", 0.8)
-            .attr("stroke", function (node) {
-                let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === node.parent })
-                const congestion = neighbor.congestion;
-                return self._congestionColors(congestion);
-            })
+            .attr("stroke", function (neighbor) { return self._congestionColors(neighbor.congestion); })
             .attr("fill", "none")
-            //.style("stroke-opacity", 0.9)
             .transition()
             .ease(d3.easePolyIn)
             .duration(0)
@@ -551,18 +549,15 @@ class Renderer {
         svgJams
             .enter()
             .append("path")
-            .attr("d", function (node) {
-                if (!node.parent)
-                    return;
-
+            .attr("d", function (neighbor) {
                 let reversePath;
                 let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
-                    if ((d[0] === node.parent && d[1] === node)) {
-                        reversePath = false;
+                    if ((d.pair[0] === neighbor.pair[0] && d.pair[1] === neighbor.pair[1])) {
+                        reversePath = true;
                         return true;
                     }
-                    else if (d[1] === node.parent && d[0] === node) {
-                        reversePath = true;
+                    else if (d.pair[1] === neighbor.pair[0] && d.pair[0] === neighbor.pair[1]) {
+                        reversePath = false;
                         return true;
                     }
                     else return false;
@@ -571,7 +566,7 @@ class Renderer {
                 if (!originalLine)
                     return;
 
-                let distance = Math.hypot(node.coord.x - node.parent.coord.x, node.coord.y - node.parent.coord.y);
+                let distance = Math.hypot(neighbor.pair[0].coord.x - neighbor.pair[1].coord.x, neighbor.pair[0].coord.y - neighbor.pair[1].coord.y);
                 let noiseAmount = distance * 3;
 
                 let lineLength = originalLine.getTotalLength();
@@ -590,13 +585,8 @@ class Renderer {
                 return self._lineGenerator(lineData);
             })
             .attr("stroke-width", 0.8)
-            .attr("stroke", function (node) {
-                let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === node.parent })
-                const congestion = neighbor.congestion;
-                return self._congestionColors(congestion);
-            })
+            .attr("stroke", function (neighbor) { return self._congestionColors(neighbor.congestion); })
             .attr("fill", "none")
-            //.style("stroke-opacity", 0.9)
             .transition()
             .ease(d3.easePolyIn)
             .duration(0)
@@ -644,12 +634,7 @@ class Renderer {
             .selectAll("path")
             .transition()
             .duration(500)
-            .attr("stroke", function (neighborsOfNode) {
-                let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
-                let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
-                const congestion = neighbor.congestion;
-                return self._congestionColors(congestion);
-            });
+            .attr("stroke", function (neighbor) { return self._congestionColors(neighbor.congestion); });
     }
 
     disableCongestion() {
@@ -659,11 +644,11 @@ class Renderer {
             .selectAll("path")
             .transition()
             .duration(500)
-            .attr("stroke", function (neighborsOfNode) { return neighborsOfNode[0].metroColor; })
+            .attr("stroke", function (neighbor) { return neighbor.pair[0].metroColor; })
     }
 
     focusNodes(nodes) {
-        let svgPathNotInNodes = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !nodes.includes(neighborsOfNode[0]) || !nodes.includes(neighborsOfNode[1]) });
+        let svgPathNotInNodes = this._svgLineGroup.selectAll("path").filter(function (neighbor) { return !nodes.includes(neighbor.pair[0]) || !nodes.includes(neighbor.pair[1]) });
         let svgNodeNotInNodes = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !nodes.includes(node) });
         let svgNameNotInNodes = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !nodes.includes(node) });
 
