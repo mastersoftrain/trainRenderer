@@ -140,6 +140,8 @@ class Renderer {
         this._gridData = [];
         this._isEditMode = false;
         this._isPathMode = false;
+        this._onClick = null;
+        this._currentSelection = null;
         this._neighborsOfNodes = [];
         this._zoom = d3.zoom().scaleExtent([0.3, 4]).translateExtent([[0, 0], [5000, 3500]]);
         this._lineGenerator = d3
@@ -162,7 +164,7 @@ class Renderer {
 
         this._svgContainer.call(this._zoom.transform, d3.zoomIdentity.translate(0, 0).scale(0.4))
 
-        this._svgCoordSelectorGroup = this._svgContainer.append("g");
+        this._svgBackgroundGroup = this._svgContainer.append("g");
         this._svgGridGroup = this._svgContainer.append("g");
         this._svgLineJamGroup = this._svgContainer.append("g");
         this._svgLineGroup = this._svgContainer.append("g");
@@ -170,83 +172,21 @@ class Renderer {
         this._svgInsideNodeGroup = this._svgContainer.append("g");
         this._svgNodeNameBackgroundGroup = this._svgContainer.append("g");
         this._svgNodeNameGroup = this._svgContainer.append("g");
-        this._svgLineOverGroup = this._svgContainer.append("g");
-        this._svgCoordSelectorGroup
+
+        this._svgBackgroundGroup
             .append("rect")
             .attr("x", 0)
             .attr("y", 0)
             .attr("width", 100 * self._gridSize)
             .attr("height", 70 * self._gridSize)
             .attr("fill-opacity", "0")
-            .on("contextmenu", function (d) {
-                if (self._isEditMode) {
-                    let mouseCoord = d3.mouse(this);
-                    let gridCoord = {
-                        x: Math.round(mouseCoord[0] / self._gridSize),
-                        y: Math.round(mouseCoord[1] / self._gridSize)
-                    }
-
-                    let param_xy = {};
-                    let currentConfig = selected[selected.length - 1];
-
-                    if (selected[selected.length - 1]) {
-                        param_xy.column = "coord";
-                        param_xy.id = currentConfig.id;
-                        param_xy.coord_x = gridCoord.x;
-                        param_xy.coord_y = gridCoord.y;
-                        axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
-                            .then(function (response) {
-                                if (response.status === 200) {
-                                    currentConfig.coord.x = gridCoord.x;
-                                    currentConfig.coord.y = gridCoord.y;
-                                    displayConfig(currentConfig);
-                                    selected = []
-                                    render(selectedAll)
-                                    console.log(response);
-                                }
-                            })
-                            .catch(function (error) {
-                                console.log(error);
-                            });
-                    }
-                }
-                else if (self._isPathMode) {
-                    let mouseCoord = d3.mouse(this);
-                    let gridCoord = {
-                        x: Math.round(mouseCoord[0] / self._gridSize),
-                        y: Math.round(mouseCoord[1] / self._gridSize)
-                    }
-
-                    let param_xy = {};
-                    let currentConfig = selected[selected.length - 1];
-
-                    if (selected[selected.length - 1]) {
-                        param_xy.column = "coord2";
-                        param_xy.id = currentConfig.id;
-                        param_xy.coord_x = gridCoord.x;
-                        param_xy.coord_y = gridCoord.y;
-                        axios.post("http://ec2-54-180-115-171.ap-northeast-2.compute.amazonaws.com:3000/editor", param_xy)
-                            .then(function (response) {
-                                if (response.status === 200) {
-                                    currentConfig.pathCoord.x = gridCoord.x;
-                                    currentConfig.pathCoord.y = gridCoord.y;
-                                    displayConfig(currentConfig);
-                                    selected = []
-                                    render(selectedAll)
-                                    console.log(response);
-                                }
-                            })
-                            .catch(function (error) {
-                                console.log(error);
-                            });
-                    }
-                }
-                else {
-                    self._isPathMode = false;
-                    self._isEditMode = false;
-                    displayConfig(null);
-                }
+            .on("click", function (d) {
+                self._currentSelection = null;
+                if (self._onClick && typeof (self._onClick) === "function")
+                    self._onClick(self._currentSelection);
             })
+
+        this.setSelectionCallback(function callback(selection) { console.log(selection); })
 
         Renderer.instance = this;
     }
@@ -427,54 +367,10 @@ class Renderer {
             .enter()
             .append("circle")
             .classed("node-inside", true)
-            .on("click", function (d, i) {
-                if (self._isEditMode && selected[selected.length - 1] === self._nodes[i]) {
-                    d3.select(this)
-                        .classed("node-inside", true)
-                        .classed("node-select", false)
-
-                    self._isEditMode = false;
-                    self._isPathMode = false;
-                    selected = []
-                    displayConfig(null);
-                }
-                else {
-                    d3.select(this)
-                        .classed("node-inside", false)
-                        .classed("node-select", true)
-
-                    selected = []
-                    selected.push(self._nodes[i])
-                    let lastSelected = selected[selected.length - 1];
-                    displayConfig(lastSelected);
-                    self._isEditMode = true;
-                    self._isPathMode = false;
-                }
-            })
-            .on("contextmenu", function (d, i) {
-                if (self._isPathMode) {
-                    d3.select(this)
-                        .classed("node-inside", true)
-                        .classed("node-select", false)
-
-                    displayConfig(null);
-                    selected = []
-                    self._isPathMode = false;
-                    self._isEditMode = false;
-                } else {
-                    d3.select(this)
-                        .attr("cx", function (node) { return node.pathCoord.x * self._gridSize; })
-                        .attr("cy", function (node) { return node.pathCoord.y * self._gridSize; })
-                        .classed("node-inside", false)
-                        .classed("node-select", true)
-
-                    selected = []
-                    selected.push(self._nodes[i])
-                    let lastSelected = selected[selected.length - 1];
-                    displayConfig(lastSelected);
-                    self._isEditMode = false;
-                    self._isPathMode = true;
-                }
+            .on("click", function (d) {
+                self._currentSelection = d;
+                if (self._onClick && typeof (self._onClick) === "function")
+                    self._onClick(self._currentSelection);
             })
             .attr("cx", function (node) { return node.coord.x * self._gridSize; })
             .attr("cy", function (node) { return (node.coord.y - 1) * self._gridSize; })
@@ -732,36 +628,6 @@ class Renderer {
         }
 
         focusNodes(rawPaths);
-
-        // let svgPathNotInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return !rawPaths.includes(neighborsOfNode[0]) || !rawPaths.includes(neighborsOfNode[1]) });
-        // //let svgPathInPath = this._svgLineGroup.selectAll("path").filter(function (neighborsOfNode) { return rawPaths.includes(neighborsOfNode[0]) && rawPaths.includes(neighborsOfNode[1]) });
-        // let svgNodeNotInPath = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !rawPaths.includes(node) });
-        // let svgNameNotInPath = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !rawPaths.includes(node) });
-
-        // svgPathNotInPath.classed("fade-out", true).classed("fade-in", false);
-        // svgNodeNotInPath.classed("fade-out", true).classed("fade-in", false);
-        // svgNameNotInPath.classed("fade-out", true).classed("fade-in", false);
-
-        // let congestionDomain = [0, 1.0];
-        // svgPathInPath.nodes().forEach(n => {
-        //     let startNode = n.__data__[0];
-        //     let endNode = n.__data__[1];
-
-        //     let neighbor = startNode.neighbors.find(neighbor => { return neighbor.node === endNode; })
-        //     congestionDomain.push(neighbor.congestion);
-        // })
-        // congestionDomain.sort();
-
-        // let congestionColors = d3.scaleLinear()
-        //     .range(["#247BA0", "#70C1B3", "#B2DBBF", "#F3FFBD", "#FF1654"])
-        //     .domain(congestionDomain)
-
-        // svgPathInPath.attr("stroke", function (neighborsOfNode) {
-        //     let node = self.nodes.find((node) => { return node === neighborsOfNode[0] });
-        //     let neighbor = node.neighbors.find((neighbor) => { return neighbor.node === neighborsOfNode[1] })
-        //     const congestion = neighbor.congestion;
-        //     return congestionColors(congestion);
-        // });
     }
 
     disablePath() {
@@ -811,6 +677,16 @@ class Renderer {
         this._svgNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
         this._svgNodeNameGroup.selectAll("text").classed("fade-out", false).classed("fade-in", true);
     }
+
+    setSelectionCallback(callBack) {
+        this._onClick = callBack;
+    }
+}
+
+function setSelectionCallback(callBack) {
+    let renderer = new Renderer();
+
+    renderer.setSelectionCallback(callBack);
 }
 
 function render(nodes) {
