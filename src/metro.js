@@ -152,6 +152,7 @@ class Renderer {
         this._congestionColors = d3.scaleLinear()
             .range(["#247BA0", "#70C1B3", "#B2DBBF", "#F3FFBD", "#FF1654"])
             .domain([0.0, 0.1, 0.2, 0.4, 1.0])
+        this._lineJamExponent = d3.scalePow().exponent(2.5).domain([0,1]).range([0,100]);
         this._svgContainer = d3
             .select("#metro")
             .append("svg")
@@ -201,7 +202,7 @@ class Renderer {
         for (let i = 0; i < newNodes.length; i++) {
             for (let j = 0; j < newNodes[i].neighbors.length; j++) {
 
-                if (this._neighborsOfNodes.find(pair => pair[0] === newNodes[i].neighbors[j].node && pair[1] === newNodes[i]))
+                if (this._neighborsOfNodes.find(neighbor => neighbor.pair[0] === newNodes[i].neighbors[j].node && neighbor.pair[1] === newNodes[i]))
                     continue;
 
                 if (newNodes[i].name == newNodes[i].neighbors[j].node.name)
@@ -478,8 +479,9 @@ class Renderer {
             let currentNode = rawPaths[i];
 
             let neighbor = currentNode.neighbors.find(n => { return n.node === previousNode; })
-            let congestionMultiplier = 100;
-            for (let congestion = 0; congestion < neighbor.congestion * congestionMultiplier; congestion++) {
+            let congestionMultiplier = 50;
+            let exponentCongestion = this._lineJamExponent(neighbor.congestion);
+            for (let congestion = 0; congestion < exponentCongestion; congestion++) {
                 paths.push({
                     "pair": [previousNode, currentNode],
                     "congestion": neighbor.congestion
@@ -494,54 +496,20 @@ class Renderer {
         svgJams.exit().remove()
 
         svgJams
-            .attr("d", function (neighbor) {
-                let reversePath;
-                let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
-                    if ((d.pair[0] === neighbor.pair[0] && d.pair[1] === neighbor.pair[1])) {
-                        reversePath = true;
-                        return true;
-                    }
-                    else if (d.pair[1] === neighbor.pair[0] && d.pair[0] === neighbor.pair[1]) {
-                        reversePath = false;
-                        return true;
-                    }
-                    else return false;
-                }).nodes()[0]
-
-                if (!originalLine)
-                    return;
-
-                let distance = Math.hypot(neighbor.pair[0].coord.x - neighbor.pair[1].coord.x, neighbor.pair[0].coord.y - neighbor.pair[1].coord.y);
-                let noiseAmount = distance * 3;
-
-                let lineLength = originalLine.getTotalLength();
-                let interval = lineLength / (noiseAmount - 1);
-                let lineData = d3.range(noiseAmount).map(function (d) {
-                    let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d) * interval : d * interval);
-                    point.x = Math.round(point.x / self._gridSize)
-                    point.y = Math.round(point.y / self._gridSize)
-                    if (d == 0 || d == noiseAmount - 1)
-                        return point;
-
-                    point.x += Random.range(-0.3, 0.3);
-                    point.y += Random.range(-0.3, 0.3);
-                    return point;
-                });;
-                return self._lineGenerator(lineData);
-            })
-            .attr("stroke-width", 0.8)
+            .attr("d", function (neighbor) { return generateRandomLineJam(neighbor); })
+            .attr("stroke-width", 0.5)
             .attr("stroke", function (neighbor) { return self._congestionColors(neighbor.congestion); })
             .attr("fill", "none")
             .transition()
             .ease(d3.easePolyIn)
-            .duration(0)
+            .duration(1)
             .attrTween("stroke-dashoffset", tweenDashOffset)
             .attrTween("stroke-dasharray", tweenDash)
             .on("end", function repeat() {
                 d3.active(this)
                     .transition()
-                    .duration(Random.rangeInt(750, 3000))
-                    .delay(Random.range(0, 5))
+                    .duration(Random.rangeInt(2000, 5000))
+                    .delay(Random.range(0, 100))
                     .attrTween("stroke-dasharray", tweenDash)
                     .on("end", repeat);
             })
@@ -549,54 +517,20 @@ class Renderer {
         svgJams
             .enter()
             .append("path")
-            .attr("d", function (neighbor) {
-                let reversePath;
-                let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
-                    if ((d.pair[0] === neighbor.pair[0] && d.pair[1] === neighbor.pair[1])) {
-                        reversePath = true;
-                        return true;
-                    }
-                    else if (d.pair[1] === neighbor.pair[0] && d.pair[0] === neighbor.pair[1]) {
-                        reversePath = false;
-                        return true;
-                    }
-                    else return false;
-                }).nodes()[0]
-
-                if (!originalLine)
-                    return;
-
-                let distance = Math.hypot(neighbor.pair[0].coord.x - neighbor.pair[1].coord.x, neighbor.pair[0].coord.y - neighbor.pair[1].coord.y);
-                let noiseAmount = distance * 3;
-
-                let lineLength = originalLine.getTotalLength();
-                let interval = lineLength / (noiseAmount - 1);
-                let lineData = d3.range(noiseAmount).map(function (d) {
-                    let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d) * interval : d * interval);
-                    point.x = Math.round(point.x / self._gridSize)
-                    point.y = Math.round(point.y / self._gridSize)
-                    if (d == 0 || d == noiseAmount - 1)
-                        return point;
-
-                    point.x += Random.range(-0.3, 0.3);
-                    point.y += Random.range(-0.3, 0.3);
-                    return point;
-                });;
-                return self._lineGenerator(lineData);
-            })
-            .attr("stroke-width", 0.8)
+            .attr("d", function (neighbor) { return generateRandomLineJam(neighbor); })
+            .attr("stroke-width", 0.5)
             .attr("stroke", function (neighbor) { return self._congestionColors(neighbor.congestion); })
             .attr("fill", "none")
             .transition()
             .ease(d3.easePolyIn)
-            .duration(0)
+            .duration(1)
             .attrTween("stroke-dashoffset", tweenDashOffset)
             .attrTween("stroke-dasharray", tweenDash)
             .on("end", function repeat() {
                 d3.active(this)
                     .transition()
-                    .duration(Random.rangeInt(750, 3000))
-                    .delay(Random.range(0, 5))
+                    .duration(Random.rangeInt(2000, 5000))
+                    .delay(Random.range(0, 100))
                     .attrTween("stroke-dasharray", tweenDash)
                     .on("end", repeat);
             })
@@ -617,6 +551,44 @@ class Renderer {
             };
         }
 
+        function generateRandomLineJam(neighbor) {
+            let reversePath;
+            let originalLine = self._svgLineGroup.selectAll("path").filter(d => {
+                if ((d.pair[0] === neighbor.pair[0] && d.pair[1] === neighbor.pair[1])) {
+                    reversePath = false;
+                    return true;
+                }
+                else if (d.pair[1] === neighbor.pair[0] && d.pair[0] === neighbor.pair[1]) {
+                    reversePath = true;
+                    return true;
+                }
+                else return false;
+            }).nodes()[0]
+
+            if (!originalLine)
+                return;
+
+            let distance = Math.hypot(neighbor.pair[0].coord.x - neighbor.pair[1].coord.x, neighbor.pair[0].coord.y - neighbor.pair[1].coord.y);
+            let dx = (neighbor.pair[1].coord.x - neighbor.pair[0].coord.x) / distance;
+            let dy = (neighbor.pair[1].coord.y - neighbor.pair[0].coord.y) / distance;
+            let noiseAmount = 10;
+
+            let lineLength = originalLine.getTotalLength();
+            let interval = lineLength / (noiseAmount - 1);
+            let lineData = d3.range(noiseAmount).map(function (d) {
+                let point = originalLine.getPointAtLength(reversePath ? (noiseAmount - d) * interval : d * interval);
+                point.x = Math.round(point.x / self._gridSize)
+                point.y = Math.round(point.y / self._gridSize)
+                if (d == 0 || d == noiseAmount - 1)
+                    return point;
+
+                point.x += dy * Random.range(-0.3, 0.3);
+                point.y += - dx * Random.range(-0.3, 0.3);
+                return point;
+            });;
+            return self._lineGenerator(lineData);
+        }
+
         focusNodes(rawPaths);
     }
 
@@ -635,6 +607,33 @@ class Renderer {
             .transition()
             .duration(500)
             .attr("stroke", function (neighbor) { return self._congestionColors(neighbor.congestion); });
+
+        this._svgBackgroundGroup
+            .selectAll("rect")
+            .transition()
+            .duration(500)
+            .attr("fill-opacity", 1)
+            .attr("fill", "#2f3131")
+
+        this._svgNodeNameBackgroundGroup
+            .selectAll("rect")
+            .classed("node-name-background", false)
+            .transition()
+            .duration(500)
+            .attr("opacity", 0.3)
+
+        this._svgGridGroup
+            .selectAll("path")
+            .classed("grid", false)
+            .transition()
+            .duration(500)
+            .attr("stroke", "#63605b")
+
+        this._svgNodeNameGroup
+            .selectAll("text")
+            .transition()
+            .duration(500)
+            .attr("fill", "#f8f1e5")
     }
 
     disableCongestion() {
@@ -645,22 +644,47 @@ class Renderer {
             .transition()
             .duration(500)
             .attr("stroke", function (neighbor) { return neighbor.pair[0].metroColor; })
+
+        this._svgBackgroundGroup
+            .selectAll("rect")
+            .transition()
+            .duration(500)
+            .attr("fill-opacity", 1)
+            .attr("fill", "white")
+
+        this._svgNodeNameBackgroundGroup
+            .selectAll("rect")
+            .attr("stroke", function (node) { return node.__data__.metroColor; })
+            .classed("node-name-background", true)
+
+        this._svgGridGroup
+            .selectAll("path")
+            .classed("grid", true)
+
+        this._svgNodeNameGroup
+            .selectAll("text")
+            .transition()
+            .duration(500)
+            .attr("fill", function (node) { return node.metroColor; })
     }
 
     focusNodes(nodes) {
         let svgPathNotInNodes = this._svgLineGroup.selectAll("path").filter(function (neighbor) { return !nodes.includes(neighbor.pair[0]) || !nodes.includes(neighbor.pair[1]) });
         let svgNodeNotInNodes = this._svgNodeGroup.selectAll("circle").filter(function (node) { return !nodes.includes(node) });
+        let svgInsideNodeInNodes = this._svgInsideNodeGroup.selectAll("circle").filter(function (node) { return !nodes.includes(node) });
         let svgNameNotInNodes = this._svgNodeNameGroup.selectAll("text").filter(function (node) { return !nodes.includes(node) });
 
         svgPathNotInNodes.classed("fade-out", true).classed("fade-in", false);
         svgNodeNotInNodes.classed("fade-out", true).classed("fade-in", false);
         svgNameNotInNodes.classed("fade-out", true).classed("fade-in", false);
+        svgInsideNodeInNodes.classed("fade-out", true).classed("fade-in", false);
     }
 
     disableFocus() {
         this._svgLineGroup.selectAll("path").classed("fade-out", false).classed("fade-in", true);
         this._svgNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
         this._svgNodeNameGroup.selectAll("text").classed("fade-out", false).classed("fade-in", true);
+        this._svgInsideNodeGroup.selectAll("circle").classed("fade-out", false).classed("fade-in", true);
     }
 
     setSelectionCallback(callBack) {
