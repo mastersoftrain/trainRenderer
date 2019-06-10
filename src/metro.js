@@ -781,7 +781,7 @@ function findPath(startNode, endNode) {
 
         for (let i = 0; i < neighbors.length; i++) {
             let neighborNode = neighbors[i].node;
-            let neighborcost = neighbors[i].cost * 10;
+            let neighborcost = (1 + neighbors[i].congestion) * 5;
 
             if (closeList.includes(neighborNode))
                 continue;
