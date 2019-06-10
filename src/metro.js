@@ -152,7 +152,7 @@ class Renderer {
         this._congestionColors = d3.scaleLinear()
             .range(["#247BA0", "#70C1B3", "#B2DBBF", "#F3FFBD", "#FF1654"])
             .domain([0.0, 0.1, 0.2, 0.4, 1.0])
-        this._lineJamExponent = d3.scalePow().exponent(2.5).domain([0,1]).range([0,100]);
+        this._lineJamExponent = d3.scalePow().exponent(2.5).domain([0, 1]).range([0, 100]);
         this._svgContainer = d3
             .select("#metro")
             .append("svg")
@@ -599,6 +599,36 @@ class Renderer {
         disableFocus();
     }
 
+    renderPaths(paths) {
+        let self = this;
+        let colors = d3.scaleOrdinal().domain(paths.length).range(d3.schemeSet3);
+        let concatPath = [];
+
+        paths.forEach(function (path, i) {
+            let color = colors(i);
+
+            self._svgLineGroup
+                .selectAll("path")
+                .filter(function (neighbor) { return path.includes(neighbor.pair[0]) && path.includes(neighbor.pair[1]) })
+                .transition()
+                .duration(500)
+                .attr("stroke", color)
+
+            concatPath = concatPath.concat(path);
+        })
+        focusNodes(concatPath)
+    }
+
+    disablePaths() {
+        this._svgLineGroup
+            .selectAll("path")
+            .transition()
+            .duration(500)
+            .attr("stroke", function (neighbor) { return neighbor.pair[0].metroColor; })
+
+        disableFocus();
+    }
+
     renderCongestion() {
         let self = this;
 
@@ -732,6 +762,18 @@ function renderPath(startNode, endNode) {
     let renderer = new Renderer();
 
     renderer.renderPath(startNode, endNode);
+}
+
+function renderPaths(paths) {
+    let renderer = new Renderer();
+
+    renderer.renderPaths(paths);
+}
+
+function disablePaths() {
+    let renderer = new Renderer();
+
+    renderer.disablePaths();
 }
 
 function disablePath() {
